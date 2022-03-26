@@ -10,7 +10,7 @@ int isFileOrDir(char *name) {
     int error = stat(name, &data);
     if(error) {
         perror(name);
-        return 0;
+        exit(EXIT_FAILURE);
     }
 
     if(S_ISREG(data.st_mode)) {
