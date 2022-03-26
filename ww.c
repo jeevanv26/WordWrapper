@@ -43,7 +43,7 @@ int f = isFileOrDir(argv[2]);
   }
   return EXIT_SUCCESS;
 }
-void wrap(int fd_input, int fd_output){
+void wrap(int width, int fd_input, int fd_output){
   char buffer[BUFFER_SIZE];
    int bytes_read= read(fd_input,buffer, BUFFER_SIZE);
   if(bytes_read < 0){
@@ -55,3 +55,4 @@ void wrap(int fd_input, int fd_output){
     close(fd);
     exit(EXIT_SUCCESS);
   }
+ }
