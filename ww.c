@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #define BUFFER_SIZE 5
 void wrap(int width,int fd_input,int fd_output);
