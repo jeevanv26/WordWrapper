@@ -6,23 +6,8 @@
 
 #define BUFFER_SIZE 5
 void wrap(int width,int fd_input,int fd_output);
+int isFileOrDir(char *name);
 
-int isFileOrDir(char *name) {
-    struct stat data;
-    int error = stat(name, &data);
-    if(error) {
-        perror(name);
-        exit(EXIT_FAILURE);
-    }
-
-    if(S_ISREG(data.st_mode)) {
-        return 1; // it's a file
-    }
-    if(S_ISDIR(data.st_mode)) {
-        return 2; // it's a directory
-    }
-    return 0;
-}
 
 int main(int argc, char*argv[])
 {
@@ -31,17 +16,22 @@ int main(int argc, char*argv[])
     }
   int width = atoi(argv[1]);
   assert(width > 0);
-  
-int f = isFileOrDir(argv[2]);
 
-  if (f == 1) {
-      int fd = open(argv[2], O_RDONLY);
-     if(fd < 0){
-    // there was some error in opening the file
-        perror(argv[2]);
-     exit(EXIT_FAILURE);
-     }
+  if(argc ==2){
     wrap(width,fd,1);
+  }
+  else{
+    int f = isFileOrDir(argv[2]);
+
+      if (f == 1) {
+        int fd = open(argv[2], O_RDONLY);
+        if(fd < 0){
+          // there was some error in opening the file
+        perror(argv[2]);
+        exit(EXIT_FAILURE);
+        }
+     wrap(width,fd,1);
+    }
   }
   return EXIT_SUCCESS;
 }
@@ -57,4 +47,21 @@ void wrap(int width, int fd_input, int fd_output){
     close(fd);
     exit(EXIT_SUCCESS);
   }
- }
+}
+
+  int isFileOrDir(char *name) {
+      struct stat data;
+      int error = stat(name, &data);
+      if(error) {
+          perror(name);
+          exit(EXIT_FAILURE);
+      }
+
+      if(S_ISREG(data.st_mode)) {
+          return 1; // it's a file
+      }
+      if(S_ISDIR(data.st_mode)) {
+          return 2; // it's a directory
+      }
+      return 0;
+  }
