@@ -18,7 +18,7 @@ int main(int argc, char*argv[])
   assert(width > 0);
 
   if(argc ==2){
-    wrap(width,fd,1);
+    wrap(width,0,1);
   }
   else{
     int f = isFileOrDir(argv[2]);
