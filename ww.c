@@ -21,38 +21,9 @@ int main(int argc, char*argv[])
     }
   int width = atoi(argv[1]);
   assert(width > 0);
-  
-  // direc
+  //Standard input
   if(argc == 2) {
-     char *dirName = argv[2];
-     struct dirent *file;
-     DIR *dir = opendir(dirName);
      
-     chdir(dirName);
-     int fileLength;
-     
-     if (dir) {
-        while ( (file = readdir(dir)) != NULL) {
-           fileLength = strlen(file->d_name);
-           char *fileName = malloc(sizeof(char) * fileLength + 1);
-           strcpy(fileName, file->d_name);
-           
-           if ( !((strncmp(".", fileName, 1) == 0) || (strncmp("wrap.", fileName, 5) == 0)) ) {
-              int fd = open(fileName, O_RDONLY);
-              char *wrapped = malloc(sizeof(char) * 6 + fileLength);
-              strcpy(wrapped, "wrap.");
-              strcat(wrapped, fileName);
-              
-              int newfd = open(wrapped, O_WRONLY | O_TRUNC | O_CREAT, 0666);
-              wrap(width, fd, newfd);
-              free(wrapped);
-              close(fd);
-              close(newfd);
-           }
-           free(fileName);
-        }
-        closedir(dir);
-     }
     // wrap(width,0,1);
   }
   else{
@@ -67,6 +38,45 @@ int main(int argc, char*argv[])
         }
      wrap(width,fd,1);
     }
+     // direc
+     if (f == 2) {
+        char *dirName = argv[2];
+        int closed; // var to check if files are closed or not
+        // makes struct for directory
+        struct dirent *file;
+        DIR *dir = opendir(dirName); // opens directory
+     
+        // switch directories
+        chdir(dirName);
+        int nameLength;
+        if (dir) {
+           
+           while ( (file = readdir(dir)) != NULL) {
+              nameLength = strlen(file->d_name);
+              char *fileName = malloc(sizeof(char) * nameLength + 1);
+              strcpy(fileName, file->d_name);
+           
+              // checks if wrapping is allowed
+              if ( !((strncmp(".", fileName, 1) == 0) || (strncmp("wrap.", fileName, 5) == 0)) ) {
+                 int fd = open(fileName, O_RDONLY);
+                 char *wrapped = malloc(sizeof(char) * 6 + nameLength);
+                 strcpy(wrapped, "wrap.");
+                 strcat(wrapped, fileName); // concatenates "wrap." with given file name
+              
+                 // opens new destination file
+                 int newfd = open(wrapped, O_WRONLY | O_TRUNC | O_CREAT, 0666);
+                 wrap(width, fd, newfd);
+                 free(wrapped);
+                 closed = close(fd);
+                 if (closed != 0) perror("File not closed"); // return EXIT_FAILURE; (removed)
+                 closed = close(newfd);
+                 if (closed != 0) perror("Destination file not closed"); // return EXIT_FAILURE; (removed)
+              }
+           free(fileName);
+        }
+        closed = closedir(dir); // close directory when finished
+        //if(closed!=0) perror("Directory not closed"); // return EXIT_FAILURE; (removed)
+     }
   }
   return EXIT_SUCCESS;
 }
