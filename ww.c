@@ -21,11 +21,11 @@ void wrap(int width, int fd_input, int fd_output){
    int index = 0;
    int wordLength =0;
    int currentPosition = 0;
-   char * word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+   char * word = (char*) malloc(10 * sizeof(char)); // did you mean sizeof char, perhaps?
    char space = ' ';
    char nextline ='\n';
    int bytes_written = 0;
-   boolean failure = false; // did you mean bool?
+   bool failure = false; // did you mean bool?
   while(bytes_read != 0){
     if(bytes_read < 0){
       // an error occurred
@@ -45,7 +45,7 @@ void wrap(int width, int fd_input, int fd_output){
                 index = 0;
                 failure = true;
                 free(word);
-                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+                word = (char*) malloc(10 * sizeof(char)); // did you mean sizeof char, perhaps?
               }
               else if(newlines >=2){
                 bytes_written = write(fd_output,&nextline, 1);
@@ -57,7 +57,7 @@ void wrap(int width, int fd_input, int fd_output){
                 wordLength = 0;
                 index = 0;
                 free(word);
-                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+               word = (char*) malloc(10 * sizeof(char)); // did you mean sizeof char, perhaps?
               }
               else if(newlines < 2 && spaces == 0 && currentPosition + wordLength <= width){
                 bytes_written = write(fd_output,&word, wordLength);
@@ -67,7 +67,7 @@ void wrap(int width, int fd_input, int fd_output){
                 wordLength = 0;
                 index = 0;
                 free(word);
-                word = (char*)malloc(10*(char));
+                word = (char*) malloc(10 * sizeof(char));
               }
               else if(newlines < 2 && spaces ==0 && currentPosition + wordLength > width){
                 bytes_written = write(fd_output,&nextline, 1);
@@ -78,7 +78,7 @@ void wrap(int width, int fd_input, int fd_output){
                 wordLength = 0;
                 index = 0;
                 free(word);
-                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+                word = (char*) malloc(10 * sizeof(char)); // did you mean sizeof char, perhaps?
               }
               else if( currentPosition + wordLength + 1 <= width){
                 bytes_written = write(fd_output,&space, 1);
@@ -89,7 +89,7 @@ void wrap(int width, int fd_input, int fd_output){
                 wordLength = 0;
                 index = 0;
                 free(word);
-                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+                word = (char*) malloc(10 * sizeof(char)); // did you mean sizeof char, perhaps?
               }
               else if( currentPosition + wordLength + 1 > width){
                 bytes_written = write(fd_output,&nextline, 1);
@@ -100,7 +100,7 @@ void wrap(int width, int fd_input, int fd_output){
                 wordLength = 0;
                 index = 0;
                 free(word);
-                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+                word = (char*) malloc(10 * sizeof(char)); // did you mean sizeof char, perhaps?
               }
             newlines++;
           }
@@ -116,7 +116,7 @@ void wrap(int width, int fd_input, int fd_output){
                 index = 0;
                 failure = true;
                 free(word);
-                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+                word = (char*) malloc(10 * sizeof(char)); // did you mean sizeof char, perhaps?
               }
               else if(newlines >=2){
                 bytes_written = write(fd_output,&nextline, 1);
@@ -128,7 +128,7 @@ void wrap(int width, int fd_input, int fd_output){
                 wordLength = 0;
                 index = 0;
                 free(word);
-                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+                word = (char*) malloc(10 * sizeof(char)); // did you mean sizeof char, perhaps?
               }
               else if(newlines < 2 && spaces ==0 && currentPosition + wordLength <= width){
                 bytes_written = write(fd_output,&word, wordLength);
@@ -138,7 +138,7 @@ void wrap(int width, int fd_input, int fd_output){
                 wordLength = 0;
                 index = 0;
                 free(word);
-                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+                word = (char*) malloc(10 * sizeof(char)); // did you mean sizeof char, perhaps?
               }
               else if(newlines < 2 && spaces ==0 && currentPosition + wordLength > width){
                 bytes_written = write(fd_output,&nextline, 1);
@@ -149,7 +149,7 @@ void wrap(int width, int fd_input, int fd_output){
                 wordLength = 0;
                 index = 0;
                 free(word);
-                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+                word = (char*) malloc(10 * sizeof(char)); // did you mean sizeof char, perhaps?
               }
               else if( currentPosition + wordLength + 1 <= width){
                 bytes_written = write(fd_output,&space, 1);
@@ -160,7 +160,7 @@ void wrap(int width, int fd_input, int fd_output){
                 wordLength = 0;
                 index = 0;
                 free(word);
-                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+                word = (char*) malloc(10 * sizeof(char)); // did you mean sizeof char, perhaps?
               }
               else if( currentPosition + wordLength + 1 > width){
                 bytes_written = write(fd_output,&nextline, 1);
@@ -171,7 +171,7 @@ void wrap(int width, int fd_input, int fd_output){
                 wordLength = 0;
                 index = 0;
                 free(word);
-                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+                word = (char*) malloc(10 * sizeof(char)); // did you mean sizeof char, perhaps?
               }
             spaces++;
           }
