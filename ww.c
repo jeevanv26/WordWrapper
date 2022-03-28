@@ -23,6 +23,7 @@ void wrap(int width, int fd_input, int fd_output){
    int wordLength =0;
    int currentPosition = 0;
    int arrayLength = 10;
+   int numWords = 0;
    char * word = (char*) malloc(arrayLength * sizeof(char));
    char space = ' ';
    char nextline ='\n';
@@ -30,7 +31,7 @@ void wrap(int width, int fd_input, int fd_output){
    bool failure = false;
   while(bytes_read != 0){
     if(bytes_read < 0){
-      // an error occurred
+      perror("Couldn't read ");
       exit(EXIT_FAILURE);
     }
     else{
@@ -39,67 +40,107 @@ void wrap(int width, int fd_input, int fd_output){
             if(wordLength!=0){
               if(wordLength > width){
                 bytes_written = write(fd_output,&nextline, 1);
+                if(bytes_written < 0){
+                  perror("Couldn't write");
+                  exit(EXIT_FAILURE);
+                }
                 bytes_written = write(fd_output,word, wordLength);
+                if(bytes_written < 0){
+                  perror("Couldn't write");
+                  exit(EXIT_FAILURE);
+                }
                 newlines = 0;
                 spaces = 0;
                 currentPosition = 0;
                 wordLength = 0;
                 index = 0;
                 failure = true;
+                arrayLength = 10;
+                numWords ++;
+                free(word);
+                word = (char*) malloc(arrayLength * sizeof(char));
+              }
+              else if(numWords == 0){
+                bytes_written = write(fd_output,word, wordLength);
+                if(bytes_written < 0){
+                  perror("Couldn't write");
+                  exit(EXIT_FAILURE);
+                }
+                newlines = 0;
+                spaces = 0;
+                currentPosition += wordLength;
+                wordLength = 0;
+                arrayLength = 10;
+                numWords ++;
+                index = 0;
                 free(word);
                 word = (char*) malloc(arrayLength * sizeof(char));
               }
               else if(newlines >=2){
                 bytes_written = write(fd_output,&nextline, 1);
+                if(bytes_written < 0){
+                  perror("Couldn't write");
+                  exit(EXIT_FAILURE);
+                }
                 bytes_written = write(fd_output,&nextline, 1);
+                if(bytes_written < 0){
+                  perror("Couldn't write");
+                  exit(EXIT_FAILURE);
+                }
                 bytes_written = write(fd_output,word, wordLength);
+                if(bytes_written < 0){
+                  perror("Couldn't write");
+                  exit(EXIT_FAILURE);
+                }
                 newlines = 0;
                 spaces = 0;
                 currentPosition = 0;
                 wordLength = 0;
+                arrayLength = 10;
+                numWords ++;
                 index = 0;
                 free(word);
                word = (char*) malloc(arrayLength * sizeof(char));
               }
-              else if(newlines < 2 && spaces == 0 && currentPosition + wordLength <= width){
-                bytes_written = write(fd_output,word, wordLength);
-                newlines = 0;
-                spaces = 0;
-                currentPosition +=  wordLength;
-                wordLength = 0;
-                index = 0;
-                free(word);
-                word = (char*) malloc(arrayLength * sizeof(char));
-              }
-              else if(newlines < 2 && spaces ==0 && currentPosition + wordLength > width){
-                bytes_written = write(fd_output,&nextline, 1);
-                bytes_written = write(fd_output,word, wordLength);
-                newlines = 0;
-                spaces = 0;
-                currentPosition = 0;
-                wordLength = 0;
-                index = 0;
-                free(word);
-                word = (char*) malloc(arrayLength * sizeof(char));
-              }
+
               else if( currentPosition + wordLength + 1 <= width){
                 bytes_written = write(fd_output,&space, 1);
+                if(bytes_written < 0){
+                  perror("Couldn't write");
+                  exit(EXIT_FAILURE);
+                }
                 bytes_written = write(fd_output,word, wordLength);
+                if(bytes_written < 0){
+                  perror("Couldn't write");
+                  exit(EXIT_FAILURE);
+                }
                 newlines = 0;
                 spaces = 0;
-                currentPosition = 0;
+                currentPosition = currentPosition + wordLength +1;
                 wordLength = 0;
+                arrayLength = 10;
+                numWords ++;
                 index = 0;
                 free(word);
                 word = (char*) malloc(arrayLength * sizeof(char));
               }
               else if( currentPosition + wordLength + 1 > width){
                 bytes_written = write(fd_output,&nextline, 1);
+                if(bytes_written < 0){
+                  perror("Couldn't write");
+                  exit(EXIT_FAILURE);
+                }
                 bytes_written = write(fd_output,word, wordLength);
+                if(bytes_written < 0){
+                  perror("Couldn't write");
+                  exit(EXIT_FAILURE);
+                }
                 newlines = 0;
                 spaces = 0;
                 currentPosition = 0;
                 wordLength = 0;
+                arrayLength = 10;
+                numWords ++;
                 index = 0;
                 free(word);
                 word = (char*) malloc(arrayLength * sizeof(char));
@@ -107,59 +148,89 @@ void wrap(int width, int fd_input, int fd_output){
             }
             newlines++;
           }
-          else if(isspace(buffer[x]) > 0 ){ 
+          else if(isspace(buffer[x]) > 0 ){
             if(wordLength!=0){
               if(wordLength > width){
                 bytes_written = write(fd_output,&nextline, 1);
+                if(bytes_written < 0){
+                  perror("Couldn't write");
+                  exit(EXIT_FAILURE);
+                }
                 bytes_written = write(fd_output,word, wordLength);
+                if(bytes_written < 0){
+                  perror("Couldn't write");
+                  exit(EXIT_FAILURE);
+                }
                 newlines = 0;
                 spaces = 0;
                 currentPosition = 0;
                 wordLength = 0;
                 index = 0;
+                arrayLength = 10;
+                numWords ++;
                 failure = true;
+                free(word);
+                word = (char*) malloc(arrayLength * sizeof(char));
+              }
+              else if(numWords == 0){
+                bytes_written = write(fd_output,word, wordLength);
+                if(bytes_written < 0){
+                  perror("Couldn't write");
+                  exit(EXIT_FAILURE);
+                }
+                newlines = 0;
+                spaces = 0;
+                currentPosition += wordLength;
+                wordLength = 0;
+                arrayLength = 10;
+                numWords ++;
+                index = 0;
                 free(word);
                 word = (char*) malloc(arrayLength * sizeof(char));
               }
               else if(newlines >=2){
                 bytes_written = write(fd_output,&nextline, 1);
+                if(bytes_written < 0){
+                  perror("Couldn't write");
+                  exit(EXIT_FAILURE);
+                }
                 bytes_written = write(fd_output,&nextline, 1);
+                if(bytes_written < 0){
+                  perror("Couldn't write");
+                  exit(EXIT_FAILURE);
+                }
                 bytes_written = write(fd_output,word, wordLength);
+                if(bytes_written < 0){
+                  perror("Couldn't write");
+                  exit(EXIT_FAILURE);
+                }
                 newlines = 0;
                 spaces = 0;
                 currentPosition = 0;
                 wordLength = 0;
+                arrayLength = 10;
+                numWords ++;
                 index = 0;
                 free(word);
                 word = (char*) malloc(arrayLength * sizeof(char));
               }
-              else if(newlines < 2 && spaces ==0 && currentPosition + wordLength <= width){
-                bytes_written = write(fd_output,word, wordLength);
-                newlines = 0;
-                spaces = 0;
-                currentPosition +=  wordLength;
-                wordLength = 0;
-                index = 0;
-                free(word);
-                word = (char*) malloc(arrayLength * sizeof(char));
-              }
-              else if(newlines < 2 && spaces ==0 && currentPosition + wordLength > width){
-                bytes_written = write(fd_output,&nextline, 1);
-                bytes_written = write(fd_output,word, wordLength);
-                newlines = 0;
-                spaces = 0;
-                currentPosition = 0;
-                wordLength = 0;
-                index = 0;
-                free(word);
-                word = (char*) malloc(arrayLength * sizeof(char));
-              }
+
               else if( currentPosition + wordLength + 1 <= width){
                 bytes_written = write(fd_output,&space, 1);
+                if(bytes_written < 0){
+                  perror("Couldn't write");
+                  exit(EXIT_FAILURE);
+                }
                 bytes_written = write(fd_output,word, wordLength);
+                if(bytes_written < 0){
+                  perror("Couldn't write");
+                  exit(EXIT_FAILURE);
+                }
                 newlines = 0;
                 spaces = 0;
-                currentPosition = 0;
+                currentPosition = currentPosition +wordLength +1;
+                arrayLength = 10;
+                numWords ++;
                 wordLength = 0;
                 index = 0;
                 free(word);
@@ -167,10 +238,20 @@ void wrap(int width, int fd_input, int fd_output){
               }
               else if( currentPosition + wordLength + 1 > width){
                 bytes_written = write(fd_output,&nextline, 1);
+                if(bytes_written < 0){
+                  perror("Couldn't write");
+                  exit(EXIT_FAILURE);
+                }
                 bytes_written = write(fd_output,word, wordLength);
+                if(bytes_written < 0){
+                  perror("Couldn't write");
+                  exit(EXIT_FAILURE);
+                }
                 newlines = 0;
                 spaces = 0;
                 currentPosition = 0;
+                arrayLength = 10;
+                numWords ++;
                 wordLength = 0;
                 index = 0;
                 free(word);
@@ -201,7 +282,7 @@ void wrap(int width, int fd_input, int fd_output){
   }
    // we have reached the end of the file
   free(word);
-  if(failure = true)
+  if(failure == true)
     exit(EXIT_FAILURE);
 
 }
@@ -239,7 +320,7 @@ int main(int argc, char*argv[]) {
         int fd = open(argv[2], O_RDONLY);
         if(fd < 0){
           // there was some error in opening the file
-        perror(argv[2]);
+        perror("couldn't open file");
         exit(EXIT_FAILURE);
         }
      wrap(width,fd,1);
