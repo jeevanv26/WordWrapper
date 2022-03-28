@@ -13,9 +13,211 @@
 void wrap(int width,int fd_input,int fd_output);
 int isFileOrDir(char *name);
 
+void wrap(int width, int fd_input, int fd_output){
+  char buffer[BUFFER_SIZE];
+   int bytes_read= read(fd_input,buffer, BUFFER_SIZE);
+   int spaces = 0;
+   int newlines =0;
+   int index = 0;
+   int wordLength =0;
+   int currentPosition = 0;
+   char * word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+   char space = ' ';
+   char nextline ='\n';
+   int bytes_written = 0;
+   boolean failure = false; // did you mean bool?
+  while(bytes_read != 0){
+    if(bytes_read < 0){
+      // an error occurred
+      exit(EXIT_FAILURE);
+    }
+    else{
+      for(int x= 0; x< bytes_read; x++){
+          if(buffer[x] == '\n'){
+            if(wordLength!=0){
+              if(wordLength > width){
+                bytes_written = write(fd_output,&nextline, 1);
+                bytes_written = write(fd_output,&word, wordLength);
+                newlines = 0;
+                spaces = 0;
+                currentPosition = 0;
+                wordLength = 0;
+                index = 0;
+                failure = true;
+                free(word);
+                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+              }
+              else if(newlines >=2){
+                bytes_written = write(fd_output,&nextline, 1);
+                bytes_written = write(fd_output,&nextline, 1);
+                bytes_written = write(fd_output,&word, wordLength);
+                newlines = 0;
+                spaces = 0;
+                currentPosition = 0;
+                wordLength = 0;
+                index = 0;
+                free(word);
+                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+              }
+              else if(newlines < 2 && spaces == 0 && currentPosition + wordLength <= width){
+                bytes_written = write(fd_output,&word, wordLength);
+                newlines = 0;
+                spaces = 0;
+                currentPosition +=  wordLength; // removed space
+                wordLength = 0;
+                index = 0;
+                free(word);
+                word = (char*)malloc(10*(char));
+              }
+              else if(newlines < 2 && spaces ==0 && currentPosition + wordLength > width){
+                bytes_written = write(fd_output,&nextline, 1);
+                bytes_written = write(fd_output,&word, wordLength);
+                newlines = 0;
+                spaces = 0;
+                currentPosition = 0;
+                wordLength = 0;
+                index = 0;
+                free(word);
+                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+              }
+              else if( currentPosition + wordLength + 1 <= width){
+                bytes_written = write(fd_output,&space, 1);
+                bytes_written = write(fd_output,&word, wordLength);
+                newlines = 0;
+                spaces = 0;
+                currentPosition = 0;
+                wordLength = 0;
+                index = 0;
+                free(word);
+                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+              }
+              else if( currentPosition + wordLength + 1 > width){
+                bytes_written = write(fd_output,&nextline, 1);
+                bytes_written = write(fd_output,&word, wordLength);
+                newlines = 0;
+                spaces = 0;
+                currentPosition = 0;
+                wordLength = 0;
+                index = 0;
+                free(word);
+                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+              }
+            newlines++;
+          }
+          else if(isspace(buffer[x]) > 0 ){ // what is isspace()?
+            if(wordLength!=0){
+              if(wordLength > width){
+                bytes_written = write(fd_output,&nextline, 1);
+                bytes_written = write(fd_output,&word, wordLength);
+                newlines = 0;
+                spaces = 0;
+                currentPosition = 0;
+                wordLength = 0;
+                index = 0;
+                failure = true;
+                free(word);
+                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+              }
+              else if(newlines >=2){
+                bytes_written = write(fd_output,&nextline, 1);
+                bytes_written = write(fd_output,&nextline, 1);
+                bytes_written = write(fd_output,&word, wordLength);
+                newlines = 0;
+                spaces = 0;
+                currentPosition = 0;
+                wordLength = 0;
+                index = 0;
+                free(word);
+                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+              }
+              else if(newlines < 2 && spaces ==0 && currentPosition + wordLength <= width){
+                bytes_written = write(fd_output,&word, wordLength);
+                newlines = 0;
+                spaces = 0;
+                currentPosition +=  wordLength; // removed space
+                wordLength = 0;
+                index = 0;
+                free(word);
+                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+              }
+              else if(newlines < 2 && spaces ==0 && currentPosition + wordLength > width){
+                bytes_written = write(fd_output,&nextline, 1);
+                bytes_written = write(fd_output,&word, wordLength);
+                newlines = 0;
+                spaces = 0;
+                currentPosition = 0;
+                wordLength = 0;
+                index = 0;
+                free(word);
+                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+              }
+              else if( currentPosition + wordLength + 1 <= width){
+                bytes_written = write(fd_output,&space, 1);
+                bytes_written = write(fd_output,&word, wordLength);
+                newlines = 0;
+                spaces = 0;
+                currentPosition = 0;
+                wordLength = 0;
+                index = 0;
+                free(word);
+                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+              }
+              else if( currentPosition + wordLength + 1 > width){
+                bytes_written = write(fd_output,&nextline, 1);
+                bytes_written = write(fd_output,&word, wordLength);
+                newlines = 0;
+                spaces = 0;
+                currentPosition = 0;
+                wordLength = 0;
+                index = 0;
+                free(word);
+                word = (char*)malloc(10*(char)); // did you mean sizeof char, perhaps?
+              }
+            spaces++;
+          }
+          else{
+            if(index > arrayLength-1){ // did you define arrayLength somewhere else?
+               word = (char*)realloc(10*(char)); // did you mean sizeof char, perhaps?
+              word[index] = buffer[x];
+              index ++;
+              wordLength++;
+            }
+            else{
+              word[index] = buffer[x];
+              index++;
+              wordLength++;
+            }
 
-int main(int argc, char*argv[])
-{
+          }
+      }
+    }
+    bytes_read = read(fd_input,buffer, BUFFER_SIZE);
+  }
+   // we have reached the end of the file
+  free(word);
+  close(fd);
+  if(failure = true)
+    exit(EXIT_FAILURE);
+  exit(EXIT_SUCCESS);
+}
+
+  int isFileOrDir(char *name) {
+      struct stat data;
+      int error = stat(name, &data);
+      if(error) {
+          perror(name);
+          exit(EXIT_FAILURE);
+      }
+
+      if(S_ISREG(data.st_mode)) {
+          return 1; // it's a file
+      }
+      if(S_ISDIR(data.st_mode)) {
+          return 2; // it's a directory
+      }
+      return 0;
+  }
+int main(int argc, char*argv[]) {
    if (argc == 1 || argc > 3) {
         return EXIT_FAILURE;
     }
@@ -73,214 +275,11 @@ int main(int argc, char*argv[])
                  if (closed != 0) perror("Destination file not closed"); // return EXIT_FAILURE; (removed)
               }
            free(fileName);
-        }
+           }
         closed = closedir(dir); // close directory when finished
         //if(closed!=0) perror("Directory not closed"); // return EXIT_FAILURE; (removed)
+        }
      }
-  }
   return EXIT_SUCCESS;
-}
-void wrap(int width, int fd_input, int fd_output){
-  char buffer[BUFFER_SIZE];
-   int bytes_read= read(fd_input,buffer, BUFFER_SIZE);
-   int spaces = 0;
-   int newlines =0;
-   int index = 0;
-   int wordLength =0;
-   int currentPosition = 0;
-   char * word = (char*)malloc(10*(char));
-   char space = ' ';
-   char nextline ='\n';
-   int bytes_written = 0;
-   boolean failure = false;
-  while(bytes_read != 0){
-    if(bytes_read < 0){
-      // an error occurred
-      exit(EXIT_FAILURE);
-    }
-    else{
-      for(int x= 0; x< bytes_read; x++){
-          if(buffer[x] == '\n'){
-            if(wordLength!=0){
-              if(wordLength > width){
-                bytes_written = write(fd_output,&nextline, 1);
-                bytes_written = write(fd_output,&word, wordLength);
-                newlines = 0;
-                spaces = 0;
-                currentPosition = 0;
-                wordLength = 0;
-                index = 0;
-                failure = true;
-                free(word);
-                word = (char*)malloc(10*(char));
-              }
-              else if(newlines >=2){
-                bytes_written = write(fd_output,&nextline, 1);
-                bytes_written = write(fd_output,&nextline, 1);
-                bytes_written = write(fd_output,&word, wordLength);
-                newlines = 0;
-                spaces = 0;
-                currentPosition = 0;
-                wordLength = 0;
-                index = 0;
-                free(word);
-                word = (char*)malloc(10*(char));
-              }
-              else if(newlines < 2 && spaces == 0 && currentPosition + wordLength <= width){
-                bytes_written = write(fd_output,&word, wordLength);
-                newlines = 0;
-                spaces = 0;
-                currentPosition + =  wordLength;
-                wordLength = 0;
-                index = 0;
-                free(word);
-                word = (char*)malloc(10*(char));
-              }
-              else if(newlines < 2 && spaces ==0 && currentPosition + wordLength > width){
-                bytes_written = write(fd_output,&nextline, 1);
-                bytes_written = write(fd_output,&word, wordLength);
-                newlines = 0;
-                spaces = 0;
-                currentPosition = 0;
-                wordLength = 0;
-                index = 0;
-                free(word);
-                word = (char*)malloc(10*(char));
-              }
-              else if( currentPosition + wordLength + 1 <= width){
-                bytes_written = write(fd_output,&space, 1);
-                bytes_written = write(fd_output,&word, wordLength);
-                newlines = 0;
-                spaces = 0;
-                currentPosition = 0;
-                wordLength = 0;
-                index = 0;
-                free(word);
-                word = (char*)malloc(10*(char));
-              }
-              else if( currentPosition + wordLength + 1 > width){
-                bytes_written = write(fd_output,&nextline, 1);
-                bytes_written = write(fd_output,&word, wordLength);
-                newlines = 0;
-                spaces = 0;
-                currentPosition = 0;
-                wordLength = 0;
-                index = 0;
-                free(word);
-                word = (char*)malloc(10*(char));
-              }
-            newlines++;
-          }
-          else if(isspace(buffer[x]) > 0 ){
-            if(wordLength!=0){
-              if(wordLength > width){
-                bytes_written = write(fd_output,&nextline, 1);
-                bytes_written = write(fd_output,&word, wordLength);
-                newlines = 0;
-                spaces = 0;
-                currentPosition = 0;
-                wordLength = 0;
-                index = 0;
-                failure = true;
-                free(word);
-                word = (char*)malloc(10*(char));
-              }
-              else if(newlines >=2){
-                bytes_written = write(fd_output,&nextline, 1);
-                bytes_written = write(fd_output,&nextline, 1);
-                bytes_written = write(fd_output,&word, wordLength);
-                newlines = 0;
-                spaces = 0;
-                currentPosition = 0;
-                wordLength = 0;
-                index = 0;
-                free(word);
-                word = (char*)malloc(10*(char));
-              }
-              else if(newlines < 2 && spaces ==0 && currentPosition + wordLength <= width){
-                bytes_written = write(fd_output,&word, wordLength);
-                newlines = 0;
-                spaces = 0;
-                currentPosition + =  wordLength;
-                wordLength = 0;
-                index = 0;
-                free(word);
-                word = (char*)malloc(10*(char));
-              }
-              else if(newlines < 2 && spaces ==0 && currentPosition + wordLength > width){
-                bytes_written = write(fd_output,&nextline, 1);
-                bytes_written = write(fd_output,&word, wordLength);
-                newlines = 0;
-                spaces = 0;
-                currentPosition = 0;
-                wordLength = 0;
-                index = 0;
-                free(word);
-                word = (char*)malloc(10*(char));
-              }
-              else if( currentPosition + wordLength + 1 <= width){
-                bytes_written = write(fd_output,&space, 1);
-                bytes_written = write(fd_output,&word, wordLength);
-                newlines = 0;
-                spaces = 0;
-                currentPosition = 0;
-                wordLength = 0;
-                index = 0;
-                free(word);
-                word = (char*)malloc(10*(char));
-              }
-              else if( currentPosition + wordLength + 1 > width){
-                bytes_written = write(fd_output,&nextline, 1);
-                bytes_written = write(fd_output,&word, wordLength);
-                newlines = 0;
-                spaces = 0;
-                currentPosition = 0;
-                wordLength = 0;
-                index = 0;
-                free(word);
-                word = (char*)malloc(10*(char));
-              }
-            spaces++;
-          }
-          else{
-            if(index > arrayLength-1){
-               word = (char*)realloc(10*(char));
-              word[index] = buffer[x];
-              index ++;
-              wordLength++;
-            }
-            else{
-              word[index] = buffer[x];
-              index++;
-              wordLength++;
-            }
-
-          }
-      }
-    }
-    bytes_read = read(fd_input,buffer, BUFFER_SIZE);
   }
-   // we have reached the end of the file
-  free(word);
-  close(fd);
-  if(failure = true)
-    exit(EXIT_FAILURE);
-  exit(EXIT_SUCCESS);
 }
-
-  int isFileOrDir(char *name) {
-      struct stat data;
-      int error = stat(name, &data);
-      if(error) {
-          perror(name);
-          exit(EXIT_FAILURE);
-      }
-
-      if(S_ISREG(data.st_mode)) {
-          return 1; // it's a file
-      }
-      if(S_ISDIR(data.st_mode)) {
-          return 2; // it's a directory
-      }
-      return 0;
-  }
