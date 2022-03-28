@@ -39,12 +39,12 @@ void wrap(int width, int fd_input, int fd_output){
           if(buffer[x] == '\n'){
             if(wordLength!=0){
               if(wordLength > width){
-                bytes_written = write(fd_output,&nextline, 1);
+                bytes_written = write(fd_output,word, wordLength);
                 if(bytes_written < 0){
                   perror("Couldn't write");
                   exit(EXIT_FAILURE);
                 }
-                bytes_written = write(fd_output,word, wordLength);
+                bytes_written = write(fd_output,&nextline, 1);
                 if(bytes_written < 0){
                   perror("Couldn't write");
                   exit(EXIT_FAILURE);
@@ -56,7 +56,7 @@ void wrap(int width, int fd_input, int fd_output){
                 index = 0;
                 failure = true;
                 arrayLength = 10;
-                numWords ++;
+                numWords = 0;
                 free(word);
                 word = (char*) malloc(arrayLength * sizeof(char));
               }
@@ -68,7 +68,7 @@ void wrap(int width, int fd_input, int fd_output){
                 }
                 newlines = 0;
                 spaces = 0;
-                currentPosition += wordLength;
+                currentPosition = wordLength;
                 wordLength = 0;
                 arrayLength = 10;
                 numWords ++;
@@ -94,7 +94,7 @@ void wrap(int width, int fd_input, int fd_output){
                 }
                 newlines = 0;
                 spaces = 0;
-                currentPosition = 0;
+                currentPosition = wordLength;
                 wordLength = 0;
                 arrayLength = 10;
                 numWords ++;
@@ -137,7 +137,7 @@ void wrap(int width, int fd_input, int fd_output){
                 }
                 newlines = 0;
                 spaces = 0;
-                currentPosition = 0;
+                currentPosition = wordLength;
                 wordLength = 0;
                 arrayLength = 10;
                 numWords ++;
@@ -151,12 +151,12 @@ void wrap(int width, int fd_input, int fd_output){
           else if(isspace(buffer[x]) > 0 ){
             if(wordLength!=0){
               if(wordLength > width){
-                bytes_written = write(fd_output,&nextline, 1);
+                bytes_written = write(fd_output,word, wordLength);
                 if(bytes_written < 0){
                   perror("Couldn't write");
                   exit(EXIT_FAILURE);
                 }
-                bytes_written = write(fd_output,word, wordLength);
+                bytes_written = write(fd_output,&nextline, 1);
                 if(bytes_written < 0){
                   perror("Couldn't write");
                   exit(EXIT_FAILURE);
@@ -167,7 +167,7 @@ void wrap(int width, int fd_input, int fd_output){
                 wordLength = 0;
                 index = 0;
                 arrayLength = 10;
-                numWords ++;
+                numWords = 0;;
                 failure = true;
                 free(word);
                 word = (char*) malloc(arrayLength * sizeof(char));
@@ -180,7 +180,7 @@ void wrap(int width, int fd_input, int fd_output){
                 }
                 newlines = 0;
                 spaces = 0;
-                currentPosition += wordLength;
+                currentPosition = wordLength;
                 wordLength = 0;
                 arrayLength = 10;
                 numWords ++;
@@ -206,7 +206,7 @@ void wrap(int width, int fd_input, int fd_output){
                 }
                 newlines = 0;
                 spaces = 0;
-                currentPosition = 0;
+                currentPosition = wordLength;
                 wordLength = 0;
                 arrayLength = 10;
                 numWords ++;
@@ -249,7 +249,7 @@ void wrap(int width, int fd_input, int fd_output){
                 }
                 newlines = 0;
                 spaces = 0;
-                currentPosition = 0;
+                currentPosition = wordLength;
                 arrayLength = 10;
                 numWords ++;
                 wordLength = 0;
@@ -324,6 +324,7 @@ int main(int argc, char*argv[]) {
         exit(EXIT_FAILURE);
         }
      wrap(width,fd,1);
+     close(fd);
     }
      // direc
      if (f == 2) {
