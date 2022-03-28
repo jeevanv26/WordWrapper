@@ -107,7 +107,7 @@ void wrap(int width, int fd_input, int fd_output){
             }
             newlines++;
           }
-          else if(isspace(buffer[x]) > 0 ){ // what is isspace()?
+          else if(isspace(buffer[x]) > 0 ){ 
             if(wordLength!=0){
               if(wordLength > width){
                 bytes_written = write(fd_output,&nextline, 1);
@@ -181,7 +181,7 @@ void wrap(int width, int fd_input, int fd_output){
 
         }
           else{
-            if(index > arrayLength-1){ // did you define arrayLength somewhere else?
+            if(index > arrayLength-1){
                word = (char*)realloc(word,(10+arrayLength)*sizeof(char));
                arrayLength +=10;
               word[index] = buffer[x];
@@ -201,10 +201,9 @@ void wrap(int width, int fd_input, int fd_output){
   }
    // we have reached the end of the file
   free(word);
-  close(fd_input);
   if(failure = true)
     exit(EXIT_FAILURE);
-  exit(EXIT_SUCCESS);
+
 }
 
   int isFileOrDir(char *name) {
