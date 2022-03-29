@@ -15,6 +15,7 @@ calling wrap ...
 
 TEST CASES:
 Test Case 0: Tests with no more than one whitespace between words and without paragraph breaks.
+
 		./ww 20 test0.txt > test0_out
 		Input:
 		This is very good text that has been put into a file for the purposes
@@ -34,7 +35,8 @@ Test Case 0: Tests with no more than one whitespace between words and without pa
 
 		That is good.
 Test Case 1: Tests with an input with more than one whitespace between words and paragraph breaks with multiple blank lines.
-        ./ww 20 test1.txt > test1_out
+
+        	./ww 20 test1.txt > test1_out
 		Input:
 		This is very good text that has been put into a file for the purposes
 		of being
@@ -55,7 +57,8 @@ Test Case 1: Tests with an input with more than one whitespace between words and
 		That is good.
 
 Test Case 2: Tests with an input with no blank lines between paragraphs.
-        ./ww 20 test2.txt > test2_out
+
+        	./ww 20 test2.txt > test2_out
 		Input:
 		This is very good text that has been put into a file for the purposes
 		of being
@@ -72,51 +75,55 @@ Test Case 2: Tests with an input with no blank lines between paragraphs.
 		That is good.
 
 Test Case 3: Tests with an input with characters equal to width size.
-        ./ww 20 test3.txt > test4_out
-        Input:
-        ttttt ttttt ttttt tt
+        	
+		./ww 20 test3.txt > test4_out
+        	Input:
+        	ttttt ttttt ttttt tt
 
-        Output:
-        ttttt ttttt ttttt tt
+        	Output:
+        	ttttt ttttt ttttt tt
 
 Test Case 4: Tests with an input with multiple words > width size
-        ./ww 20 test4.txt > test4_out
-        Input:
-        Good evening, this is a particularly interesting project 
-        called WordWrapperinSystemProgramming
-        and it is goind well thus far. Created by
-        SpandanParikhandJeevanVasanthan. 
-        Have a good day.
+        	
+		./ww 20 test4.txt > test4_out
+        	Input:
+		Good evening, this is a particularly interesting project 
+		called WordWrapperinSystemProgramming
+		and it is goind well thus far. Created by
+		SpandanParikhandJeevanVasanthan. 
+		Have a good day.
 
-        Output:
+        	Output:
 
 
 Test Case 5: Tests with an input that has whitespace characters at the beginning of a new line
-        ./ww 20 test5.txt > test5_out
-        Input:
-            This is very good text that has been put into a file for the purposes
-		        of being
-		            an
-		        example.
+		
+		./ww 20 test5.txt > test5_out
+		Input:
+		    This is very good text that has been put into a file for the purposes
+				of being
+				    an
+				example.
 
-        Output:
+		Output:
 
 
 Test Case 6: Tests with an input of a different width length
-        ./ww 30 test6.txt > test6_out
-        Input:
-        This is very good text that has been put into a file for the purposes
-		of being
-		an
-		example.
 		
-		That       is
-       			good.
+		./ww 30 test6.txt > test6_out
+		Input:
+		This is very good text that has been put into a file for the purposes
+			of being
+			an
+			example.
 
-        Output:
-        This is very good text that
-        has been put into a file for
-        the purposes of being an
-        example.
+			That       is
+				good.
 
-        That is good.
+		Output:
+		This is very good text that
+		has been put into a file for
+		the purposes of being an
+		example.
+
+		That is good.
