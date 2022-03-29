@@ -281,6 +281,7 @@ void wrap(int width, int fd_input, int fd_output){
     bytes_read = read(fd_input,buffer, BUFFER_SIZE);
   }
    // we have reached the end of the file
+   bytes_written = write(fd_output,&nextline, 1);
   free(word);
   if(failure == true)
     exit(EXIT_FAILURE);
