@@ -21,7 +21,7 @@ Test Case 0: Tests if the inputed width is valid (>0)
 	example.
 		
 	That       is
-       		good.
+		good.
 
 	Output: Program should abort, due to an assert statement (in main). As width was not inputted properly. 
 	ww: ww.c:312: main: Assertion `width > 0' failed.
@@ -37,7 +37,7 @@ Test Case 1: Tests with no more than one whitespace between words and without pa
 	example.
 		
 	That       is
-       		good.
+		good.
 
 	Output:
 	This is very good
@@ -149,12 +149,12 @@ Test Case 8: Tests with an input of a different width length
     ./ww 30 test8.txt > test8_out
     Input:
     This is very good text that has been put into a file for the purposes
-	of being
-	an
-	example.
+    of being
+    an
+    example.
 		
-	That       is
-       		good.
+    That       is
+       	good.
 
     Output:
     This is very good text that
@@ -168,38 +168,38 @@ Test Case 9: Testing with an inputted directory, test_dir, containing files t1.t
 .dontrun.txt wrap.yrun.txt; Testing if wrap run on authorized files and does nothing to files
 starting with "." and/or "wrap."
 
-> p2 (working directory)
-	> src
-		> test_dir
-			> t1.txt
-			> t2.txt
-			> .dontrun.txt
-			> wrap.yrun.txt
-		> Makefile
-		> book.txt
-		> ww.c
-		> ww (exec file)
-		> README.md (README file)
-		> test1.txt
-		> test3.txt
-		> test4.txt
-		> test5.txt
-		> test6.txt
-		> test7.txt
-		> test8.txt
+	> p2 (working directory)
+		> src
+			> test_dir
+				> t1.txt
+				> t2.txt
+				> .dontrun.txt
+				> wrap.yrun.txt
+			> Makefile
+			> book.txt
+			> ww.c
+			> ww (exec file)
+			> README.md (README file)
+			> test1.txt
+			> test3.txt
+			> test4.txt
+			> test5.txt
+			> test6.txt
+			> test7.txt
+			> test8.txt
 
 	Input: ./ww 30 test_dir
 
 	Output: Program works as intended, test_dir now contains additional files: wrap.t1.txt and t2.txt
 
-> p2 (working directory)
-	> test_dir
-		> t1.txt
-		> t2.txt
-		> .dontrun.txt
-		> wrap.t1.txt
-		> wrap.t2.txt
-		> wrap.yrun.txt
+	> p2 (working directory)
+		> test_dir
+			> t1.txt
+			> t2.txt
+			> .dontrun.txt
+			> wrap.t1.txt
+			> wrap.t2.txt
+			> wrap.yrun.txt
 
 Test 10: Testing with a large buffer
 
