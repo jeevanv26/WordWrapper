@@ -207,11 +207,21 @@ Test 10: Testing with a large buffer
 	Input: 
 	Buses 
 
-	Running throughout the system is a collection of electrical conduits called buses that carry bytes of information back and forth between the components. Buses are typically designed to transfer fixed-sized chunks of bytes known as words. The number of bytes in a word (the word size) is a fundamental system parameter that varies across systems. For example, Intel Pentium systems have a word size of 4 bytes, while serverclass systems such as Intel Itaniums and Sun SPARCS have word sizes of 8 bytes. Smaller systems that are used as embedded controllers in automobiles and factories can have word sizes of 1 or 2 bytes. For simplicity, we will assume a word size of 4 bytes, and we will assume that buses transfer only one word at a time. 
+	Running throughout the system is a collection of electrical conduits called buses that carry bytes of information back and forth between the components. Buses
+	are typically designed to transfer fixed-sized chunks of bytes known as words. The number of bytes in a word (the word size) is a fundamental system parameter 
+	that varies across systems. For example, Intel Pentium systems have a word size of 4 bytes, while serverclass systems such as Intel Itaniums and Sun SPARCS    
+	have word sizes of 8 bytes. Smaller systems that are used as embedded controllers in automobiles and factories can have word sizes of 1 or 2 bytes. For
+	simplicity, we will assume a word size of 4 bytes, and we will assume that buses transfer only one word at a time. 
 
 	I/O devices 
 
-	Input/output (I/O) devices are the system’s connection to the external world. Our example system has four I/O devices: a keyboard and mouse for user input, a display for user output, and a disk drive (or simply disk) for long-term storage of data and programs. Initially, the executable hello program resides on the disk. Each I/O device is connected to the I/O bus by either a controller or an adapter. The distinction between the two is mainly one of packaging. Controllers are chip sets in the device itself or on the system’s main printed circuit board (often called the motherboard). An adapter is a card that plugs into a slot on the motherboard. Regardless, the purpose of each is to transfer information back and forth between the I/O bus and an I/O device. Chapter 6 has more to say about how I/O devices such as disks work. And in Chapter 12, you will learn how to use the Unix I/O interface to access devices from your application programs. We focus on an interesting class of devices known as networks, but the techniques generalize to other kinds of devices as well.
+	Input/output (I/O) devices are the system’s connection to the external world. Our example system has four I/O devices: a keyboard and mouse for user input, a
+	display for user output, and a disk drive (or simply disk) for long-term storage of data and programs. Initially, the executable hello program resides on the
+	disk. Each I/O device is connected to the I/O bus by either a controller or an adapter. The distinction between the two is mainly one of packaging. Controllers
+	are chip sets in the device itself or on the system’s main printed circuit board (often called the motherboard). An adapter is a card that plugs into a slot on
+	the motherboard. Regardless, the purpose of each is to transfer information back and forth between the I/O bus and an I/O device. Chapter 6 has more to say
+	about how I/O devices such as disks work. And in Chapter 12, you will learn how to use the Unix I/O interface to access devices from your application programs.
+	We focus on an interesting class of devices known as networks, but the techniques generalize to other kinds of devices as well.
 
 	Output: 
 	Buses
