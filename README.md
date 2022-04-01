@@ -253,3 +253,56 @@ Test 10: Testing with a large buffer
 	will learn how to use the Unix I/O interface to access devices from your
 	application programs. We focus on an interesting class of devices known as
 	networks, but the techniques generalize to other kinds of devices as well.
+	
+Test 11: Tests if program ignores a subdirectory
+
+	Input: 
+	> p2 (working directory)
+		> src
+			> test_dir
+				> testDir2
+					> testFile.txt
+				> t1.txt
+				> t2.txt
+				> .dontrun.txt
+				> wrap.yrun.txt
+			> Makefile
+			> book.txt
+			> ww.c
+			> ww (exec file)
+			> README.md (README file)
+			> test1.txt
+			> test3.txt
+			> test4.txt
+			> test5.txt
+			> test6.txt
+			> test7.txt
+			> test8.txt
+
+	Input: ./ww 30 test_dir
+
+	Output: Program works as intended, test_dir now contains additional files: wrap.t1.txt and t2.txt and it also ignores testDir2 along 
+	with .dontrun.txt and wrap.yrun.txt
+
+	> p2 (working directory)
+		> test_dir
+			> testDir2
+				> testFile.txt
+			> t1.txt
+			> t2.txt
+			> .dontrun.txt
+			> wrap.t1.txt
+			> wrap.t2.txt
+			> wrap.yrun.txt
+			
+Test 12: Tests Standard input and output.
+	
+	Input: ./ww 20
+	This is very good text that has been put into a file for the purposes of bein an example.
+	
+	Output:
+	This is very good
+	text that has been
+	put into a file for
+	the purposes of bein
+	an example.
