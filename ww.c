@@ -344,22 +344,24 @@ int main(int argc, char*argv[]) {
               nameLength = strlen(file->d_name);
               char *fileName = malloc(sizeof(char) * nameLength + 1);
               strcpy(fileName, file->d_name);
+              if (isFileOrDir(fileName) == 1) { // only focuses on files, ignores any other subdirectories within the parent directory
+                
+                // checks if wrapping is allowed
+                if ( !((strncmp(".", fileName, 1) == 0) || (strncmp("wrap.", fileName, 5) == 0)) ) {
+                  int fd = open(fileName, O_RDONLY);
+                  char *wrapped = malloc(sizeof(char) * 6 + nameLength);
+                  strcpy(wrapped, "wrap.");
+                  strcat(wrapped, fileName); // concatenates "wrap." with given file name
 
-              // checks if wrapping is allowed
-              if ( !((strncmp(".", fileName, 1) == 0) || (strncmp("wrap.", fileName, 5) == 0)) ) {
-                 int fd = open(fileName, O_RDONLY);
-                 char *wrapped = malloc(sizeof(char) * 6 + nameLength);
-                 strcpy(wrapped, "wrap.");
-                 strcat(wrapped, fileName); // concatenates "wrap." with given file name
-
-                 // opens new destination file
-                 int newfd = open(wrapped, O_WRONLY | O_TRUNC | O_CREAT, 0666);
-                 wrap(width, fd, newfd);
-                 free(wrapped);
-                 closed = close(fd);
-                 if (closed != 0) perror("File not closed"); // return EXIT_FAILURE; (removed)
-                 closed = close(newfd);
-                 if (closed != 0) perror("Destination file not closed"); // return EXIT_FAILURE; (removed)
+                  // opens new destination file
+                  int newfd = open(wrapped, O_WRONLY | O_TRUNC | O_CREAT, 0666);
+                  wrap(width, fd, newfd);
+                  free(wrapped);
+                  closed = close(fd);
+                  if (closed != 0) perror("File not closed"); // return EXIT_FAILURE; (removed)
+                  closed = close(newfd);
+                  if (closed != 0) perror("Destination file not closed"); // return EXIT_FAILURE; (removed)
+                }
               }
            free(fileName);
            }
