@@ -9,10 +9,63 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <ctype.h>
+#include <pthread.h>
 
 #define BUFFER_SIZE 5
 void wrap(int width,int fd_input,int fd_output);
 int isFileOrDir(char *name);
+
+struct Node {
+  char *fileName;
+  struct Node *next;
+};
+
+struct Queue {
+  struct Node *start;
+  struct Node *end;
+  pthread_mutex_t lock;
+  pthread_cond_t dequeue;
+};
+
+void queue_init(struct Queue *q) {
+  q->start = NULL;
+  q->end = NULL;
+  
+  pthread_cond_init(&q->lock, NULL):
+  pthread_cond_init(&q->dequeue, NULL);
+}
+
+void enqueue(struct Queue *q, char name) {
+  pthread_mutex_lock(&q->lock);
+    struct Node *newNode = (struct Node *) malloc(sizeof(struct Node));
+    // allocates new node
+    newNode->next = NULL;
+    newNode->fileName = name;
+  
+    if(q->end != NULL) q->end->next = newNode; // if last item exists then append newNode to it
+    q->end = newNode; // else the newNode becomes last
+  
+    if(q->start == NULL) q->start = newNode; // nothing in queue, appends newNode in the queue
+    pthread_cond_signal(&q->dequeue);
+  pthread_mutex_unlock(&q->lock);
+  return;
+}
+
+char dequeue(struct Queue *q) {
+  pthread_mutex_lock(&q->lock);
+  
+    while(q->start == NULL) {
+      pthrad_cond_wait(&q->dequeue, &q->lock);
+    }
+    
+    struct Node *temp = q->start; // temp is set to first item in queue
+    char *dequeuedFile;
+    q->start = temp->start; //
+  
+  
+  pthread_mutex_unlock(&q->lock);
+  return dequeuedFile;
+}
 
 void wrap(int width, int fd_input, int fd_output){
   char buffer[BUFFER_SIZE];
@@ -305,11 +358,26 @@ void wrap(int width, int fd_input, int fd_output){
       return 0;
   }
 int main(int argc, char*argv[]) {
-   if (argc == 1 || argc > 3) {
-        return EXIT_FAILURE;
-    }
-  int width = atoi(argv[1]);
+  struct Queue *dirQueue = (struct Queue*) malloc(sizeof(struct Queue));
+  struct Queue *fileQueue = (struct Queue*) malloc(sizeof(struct Queue));
+ 
+//    if (argc == 1 || argc > 3) {
+//         return EXIT_FAILURE;
+//     } // change last condition to argc > 5 
+  int width = atoi(argv[2]);
   assert(width > 0);
+  
+  int thread = strlen(argv[1]);
+  if (argc == 4) {
+    if(thread == 2) { // if ./ww -r 20 FileOrDir
+      
+    } else if(thread == 3) { // if ./ww -rN 20 FileOrDir
+      
+    } else if(thread == 5) { // if ./ww -rN,M 20 FileOrDir
+      
+    } else {
+      return EXIT_FAILURE;
+    }
   //Standard input
   if(argc == 2) {
     wrap(width,0,1);
