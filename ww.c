@@ -31,11 +31,11 @@ void queue_init(struct Queue *q) {
   q->start = NULL;
   q->end = NULL;
   
-  pthread_cond_init(&q->lock, NULL):
+  pthread_mutex_init(&q->lock, NULL):
   pthread_cond_init(&q->dequeue, NULL);
 }
 
-void enqueue(struct Queue *q, char name) {
+void enqueue(struct Queue *q, char *name) {
   pthread_mutex_lock(&q->lock);
     struct Node *newNode = (struct Node *) malloc(sizeof(struct Node));
     // allocates new node
@@ -59,10 +59,13 @@ char dequeue(struct Queue *q) {
     }
     
     struct Node *temp = q->start; // temp is set to first item in queue
-    char *dequeuedFile;
-    q->start = temp->start; //
+    if (q->start == q->end) {
+      q->end = temp->next;
+    }
+    q->start = temp->next; //
   
-  
+    char *dequedFile=temp->fileName;
+    free(temp);
   pthread_mutex_unlock(&q->lock);
   return dequeuedFile;
 }
@@ -360,6 +363,12 @@ void wrap(int width, int fd_input, int fd_output){
 int main(int argc, char*argv[]) {
   struct Queue *dirQueue = (struct Queue*) malloc(sizeof(struct Queue));
   struct Queue *fileQueue = (struct Queue*) malloc(sizeof(struct Queue));
+  
+  int numDirThreads;
+  int numWrapThreads;
+  
+  queue_init(dirQueue);
+  queue_init(fileQueue);
  
 //    if (argc == 1 || argc > 3) {
 //         return EXIT_FAILURE;
@@ -370,14 +379,20 @@ int main(int argc, char*argv[]) {
   int thread = strlen(argv[1]);
   if (argc == 4) {
     if(thread == 2) { // if ./ww -r 20 FileOrDir
-      
+      numDirThreads = 1;
+      numWrapThrads = 1;
     } else if(thread == 3) { // if ./ww -rN 20 FileOrDir
-      
+        numDirThreads = 1;
+        numWrapThreads = argv[1][2];
     } else if(thread == 5) { // if ./ww -rN,M 20 FileOrDir
-      
+        numDirThread = argv[1][2];
+        numWrapThred = argv[1][4];
     } else {
       return EXIT_FAILURE;
     }
+    
+    pthread_t wrapThreads[numWrapThreads];
+    pthread_t dirThreads[numDirThreads];
   //Standard input
   if(argc == 2) {
     wrap(width,0,1);
