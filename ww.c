@@ -12,6 +12,7 @@
 #include <pthread.h>
 
 #define BUFFER_SIZE 5
+int numActiveThreads = 0;
 void wrap(int width,int fd_input,int fd_output);
 int isFileOrDir(char *name);
 
@@ -32,13 +33,13 @@ struct Args{
   struct Queue *fileQ;
   int width;
   int *numThreads;
-;
+};
 
 void queue_init(struct Queue *q) {
   q->start = NULL;
   q->end = NULL;
 
-  pthread_mutex_init(&q->lock, NULL):
+  pthread_mutex_init(&q->lock, NULL);
   pthread_cond_init(&q->dequeue, NULL);
 }
 
@@ -58,14 +59,14 @@ void enqueue(struct Queue *q, char *name) {
   return;
 }
 
-char dequeue(struct Queue *q) {
+char *dequeue(struct Queue *q) {
   pthread_mutex_lock(&q->lock);
 
     while(q->start == NULL) {
       pthread_cond_wait(&q->dequeue, &q->lock);
     }
     if(q->start == NULL)
-      return NULL;
+      return NULL; // Return EXIT_FAILURE;
     struct Node *temp = q->start; // temp is set to first item in queue
     if (q->start == q->end) {
       q->end = temp->next;
@@ -81,28 +82,32 @@ void readDir(struct Args *args){
   struct Queue *dirQueue = args->dirQ;
   struct Queue *fileQueue = args->fileQ;
   char* path = dequeue(dirQueue);
-  DIR* dir = opendir(dirName);
+  DIR* dir = opendir(path); // dirName->path
   if(!dir)
     return;
-  char* fileName;
-  numActiveThreads++;
+  
+  numActiveThreads++; // not initialized: fixed
   struct dirent *file;
-  while((fileName = readdir(dir))!= NUll){
+  while((file = readdir(dir))!= NULL) { // fileName --> file
+    char* fileName;
+    strcpy(fileName, file->d_name);
     int plen = strlen(path);
     int flen = strlen(fileName);
     char* newpath = malloc(plen + flen +2);
     memcpy(newpath, path, plen);
     newpath[plen] = '/';
     memcpy(newpath + plen + 1, file, flen + 1);
-    if(isFileOrDir(newpath) == 1)
-    enqueue(fileQueue,newpath)
-    if(isFileOrDir(newpath) == 2)
-      enqueue(dirQueue,newpath)
+    if(isFileOrDir(newpath) == 1){
+      enqueue(fileQueue,newpath);
+    }
+    if(isFileOrDir(newpath) == 2){
+      enqueue(dirQueue,newpath);
+      }
   }
   pthread_cond_signal(&dirQueue->dequeue);
 }
 
-void wrapFiles(struct Args *args){
+void wrapFiles(struct Args *args){ 
   int num = *(args->numThreads);
   int width = args->width;
   struct Queue *fileQueue = args->fileQ;
@@ -110,6 +115,7 @@ void wrapFiles(struct Args *args){
     // checks if wrapping is allowed
     int closed;
     char* fileName = dequeue(fileQueue);
+    int nameLength = strlen(fileName);
     if ( !((strncmp(".", fileName, 1) == 0) || (strncmp("wrap.", fileName, 5) == 0)) ) {
       int fd = open(fileName, O_RDONLY);
       char *wrapped = malloc(sizeof(char) * 6 + nameLength);
@@ -427,8 +433,8 @@ int main(int argc, char*argv[]) {
   int numDirThreads;
   int numWrapThreads;
 
-  queue_init(dirQueue);
-  queue_init(fileQueue);
+  queue_init(dQueue);
+  queue_init(fQueue);
 
 //    if (argc == 1 || argc > 3) {
 //         return EXIT_FAILURE;
@@ -446,30 +452,30 @@ int main(int argc, char*argv[]) {
         numWrapThreads = argv[1][2];
     } else if(thread == 5) { // if ./ww -rN,M 20 FileOrDir
         numDirThreads = argv[1][2];
-        numWrapThreadsed = argv[1][4];
+        numWrapThreads = argv[1][4];
     } else {
       return EXIT_FAILURE;
     }
-    int numActiveThreads = 0;
+    // int numActiveThreads = 0;
     pthread_t wrapThreads[numWrapThreads];
     pthread_t dirThreads[numDirThreads];
-    struct Args args[numDirThreads];
+    struct Args argsDir[numDirThreads]; // 
     struct Args args[numWrapThreads];
 
     char *dirName = argv[2];
-    enqueue(dirQueue,dirName);
+    enqueue(dQueue,dirName);
 
     for(int x = 0; x < numWrapThreads; x++){
-      args.fileQ = fQueue;
-      args.width = width;
-      args.numThreads = &numActiveThreads;
-      pthread_create(&wrapThreads[x], NULL,wrapFiles,&args[x])
+      args->fileQ = fQueue;
+      args->width = width;
+      args->numThreads = &numActiveThreads;
+      pthread_create(&wrapThreads[x], NULL, wrapFiles, &args[x]); // throws an error due to wrapFiles type
     }
     while(numActiveThreads !=0 && dQueue->start != NULL){
       for(int x = 0; x < numDirThreads; x++){
-        args[x].dirQ = dQueue;
-        args[x].fileQ = fQueue;
-        pthread_create(&dirThreads[x], NULL,readDir,&args[x])
+        argsDir[x].dirQ = dQueue;
+        argsDir[x].fileQ = fQueue;
+        pthread_create(&dirThreads[x], NULL, readDir, &argsDir[x]); // this thowing an error type void *
         numActiveThreads++;
       }
       for(int x = 0; x < numDirThreads; x++){
@@ -478,7 +484,7 @@ int main(int argc, char*argv[]) {
       }
     }
     for(int x = 0; x < numWrapThreads; x++){
-      pthread_join(wrapThreads[x], NULL)
+      pthread_join(wrapThreads[x], NULL);
     }
   //Standard input
   if(argc == 2) {
@@ -540,6 +546,7 @@ int main(int argc, char*argv[]) {
         }
      }
   return EXIT_SUCCESS;
+  }
   }
 }
 
