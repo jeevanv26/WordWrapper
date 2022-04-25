@@ -64,7 +64,8 @@ char dequeue(struct Queue *q) {
     while(q->start == NULL) {
       pthread_cond_wait(&q->dequeue, &q->lock);
     }
-
+    if(q->start == NULL)
+      return NULL;
     struct Node *temp = q->start; // temp is set to first item in queue
     if (q->start == q->end) {
       q->end = temp->next;
@@ -81,6 +82,8 @@ void readDir(struct Args *args){
   struct Queue *fileQueue = args->fileQ;
   char* path = dequeue(dirQueue);
   DIR* dir = opendir(dirName);
+  if(!dir)
+    return;
   char* fileName;
   numActiveThreads++;
   struct dirent *file;
@@ -96,13 +99,14 @@ void readDir(struct Args *args){
     if(isFileOrDir(newpath) == 2)
       enqueue(dirQueue,newpath)
   }
+  pthread_cond_signal(&dirQueue->dequeue);
 }
 
 void wrapFiles(struct Args *args){
   int num = *(args->numThreads);
   int width = args->width;
   struct Queue *fileQueue = args->fileQ;
-  while(fileQueue->start != NULL && numT != 0 ){
+  while(fileQueue->start != NULL && num != 0 ){
     // checks if wrapping is allowed
     int closed;
     char* fileName = dequeue(fileQueue);
@@ -121,7 +125,9 @@ void wrapFiles(struct Args *args){
       closed = close(newfd);
       if (closed != 0) perror("Destination file not closed"); // return EXIT_FAILURE; (removed)
     }
+    num = *(args->numThreads);
   }
+  pthread_cond_signal(&fileQueue->dequeue);
 }
 
 void wrap(int width, int fd_input, int fd_output){
@@ -447,7 +453,7 @@ int main(int argc, char*argv[]) {
     int numActiveThreads = 0;
     pthread_t wrapThreads[numWrapThreads];
     pthread_t dirThreads[numDirThreads];
-    struct Args args[numDirThreads;
+    struct Args args[numDirThreads];
     struct Args args[numWrapThreads];
 
     char *dirName = argv[2];
@@ -467,7 +473,7 @@ int main(int argc, char*argv[]) {
         numActiveThreads++;
       }
       for(int x = 0; x < numDirThreads; x++){
-          pthread_join(dirThreads[x], NULL)
+          pthread_join(dirThreads[x], NULL);
           numActiveThreads--;
       }
     }
@@ -536,3 +542,4 @@ int main(int argc, char*argv[]) {
   return EXIT_SUCCESS;
   }
 }
+
