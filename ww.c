@@ -12,7 +12,6 @@
 #include <pthread.h>
 
 #define BUFFER_SIZE 5
-int numActiveThreads = 0;
 void wrap(int width,int fd_input,int fd_output);
 int isFileOrDir(char *name);
 
@@ -24,6 +23,7 @@ struct Node {
 struct Queue {
   struct Node *start;
   struct Node *end;
+  int numActiveThreads;
   pthread_mutex_t lock;
   pthread_cond_t dequeue;
 };
@@ -32,12 +32,12 @@ struct Args{
   struct Queue* dirQ;
   struct Queue *fileQ;
   int width;
-  int *numThreads;
 };
 
 void queue_init(struct Queue *q) {
   q->start = NULL;
   q->end = NULL;
+  q->numActiveThreads = 0;
 
   pthread_mutex_init(&q->lock, NULL);
   pthread_cond_init(&q->dequeue, NULL);
@@ -60,12 +60,11 @@ void enqueue(struct Queue *q, char *name) {
 }
 
 char *dequeue(struct Queue *q) {
-  pthread_mutex_lock(&q->lock);
 
-    while(q->start == NULL) {
+    while(q->start == NULL && q-> numActiveThreads!=0) {
       pthread_cond_wait(&q->dequeue, &q->lock);
     }
-    if(q->start == NULL)
+    if(q->start == NULL && q -> numActiveThreads == 0)
       return NULL; //not exit_failure. Just means the thread doesn't need to do any work
     struct Node *temp = q->start; // temp is set to first item in queue
     if (q->start == q->end) {
@@ -75,17 +74,23 @@ char *dequeue(struct Queue *q) {
 
     char *dequeuedFile=temp->fileName;
     free(temp);
-  pthread_mutex_unlock(&q->lock);
   return dequeuedFile;
 }
 void* readDir(void *arg){
   struct Args *args = (struct Args *)arg;
   struct Queue *dirQueue = args->dirQ;
   struct Queue *fileQueue = args->fileQ;
+  pthread_mutex_lock(&dirQueue->lock);
+  dirQueue-> numActiveThreads = dirQueue -> numActiveThreads+1;
   char* path = dequeue(dirQueue);
+  pthread_mutex_unlock(&dirQueue->lock);
   DIR* dir = opendir(path);
-  if(!dir)
+  if(!dir){
+    dirQueue-> numActiveThreads = dirQueue -> numActiveThreads-1;
+    if(dirQueue->start == NULL && dirQueue -> numActiveThreads == 0)
+      pthread_cond_signal(&dirQueue->dequeue);
     return NULL;
+  }
   struct dirent *file;
   while((file = readdir(dir))!= NULL) {
     int nameLength = strlen(file->d_name);
@@ -105,19 +110,29 @@ void* readDir(void *arg){
       }
     free(fileName);
   }
-  pthread_cond_signal(&dirQueue->dequeue);
+  dirQueue-> numActiveThreads = dirQueue -> numActiveThreads-1;
+  if(dirQueue->start == NULL && dirQueue -> numActiveThreads == 0)
+    pthread_cond_signal(&dirQueue->dequeue);
   return NULL;
 }
 
 void* wrapFiles(void *arg){
   struct Args *args = (struct Args *)arg;
-  int num = *(args->numThreads);
   int width = args->width;
   struct Queue *fileQueue = args->fileQ;
-  while(fileQueue->start != NULL && num != 0 ){
+    struct Queue *dirQueue = args->dirQ;
+  while(fileQueue->start != NULL && dirQueue->numActiveThreads != 0 ){
     // checks if wrapping is allowed
     int closed;
+    pthread_mutex_lock(&fileQueue->lock);
     char* fileName = dequeue(fileQueue);
+    pthread_mutex_unlock(&fileQueue->lock);
+    if(!fileName){
+      if(fileQueue->start != NULL && dirQueue->numActiveThreads != 0)
+        pthread_cond_signal(&fileQueue->dequeue);
+      return NULL;
+    }
+
     int nameLength = strlen(fileName);
     if ( !((strncmp(".", fileName, 1) == 0) || (strncmp("wrap.", fileName, 5) == 0)) ) {
       int fd = open(fileName, O_RDONLY);
@@ -134,9 +149,9 @@ void* wrapFiles(void *arg){
       closed = close(newfd);
       if (closed != 0) perror("Destination file not closed"); // return EXIT_FAILURE; (removed)
     }
-    num = *(args->numThreads);
   }
-  pthread_cond_signal(&fileQueue->dequeue);
+  if(fileQueue->start != NULL && dirQueue->numActiveThreads != 0)
+    pthread_cond_signal(&fileQueue->dequeue);;
   return NULL;
 }
 
@@ -468,21 +483,19 @@ int main(int argc, char*argv[]) {
     enqueue(dQueue,dirName);
 
     for(int x = 0; x < numWrapThreads; x++){
+      args->dirQ = dQueue;
       args->fileQ = fQueue;
       args->width = width;
-      args->numThreads = &numActiveThreads;
       pthread_create(&wrapThreads[x], NULL, wrapFiles,args);
     }
-    while(numActiveThreads !=0 && dQueue->start != NULL){
+    while(dQueue->numActiveThreads !=0 && dQueue->start != NULL){
       for(int x = 0; x < numDirThreads; x++){
         args->dirQ = dQueue;
         args->fileQ = fQueue;
         pthread_create(&dirThreads[x], NULL, readDir,args);
-        numActiveThreads++;
       }
       for(int x = 0; x < numDirThreads; x++){
           pthread_join(dirThreads[x], NULL);
-          numActiveThreads--;
       }
     }
     for(int x = 0; x < numWrapThreads; x++){
