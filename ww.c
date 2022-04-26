@@ -94,22 +94,24 @@ void* readDir(void *arg){
   }
   struct dirent *file;
   while((file = readdir(dir))!= NULL) {
-    int nameLength = strlen(file->d_name);
-    char *fileName = malloc(sizeof(char) * nameLength + 1);
-    strcpy(fileName, file->d_name);
-    int plen = strlen(path);
-    int flen = strlen(fileName);
-    char* newpath = malloc(plen + flen +2);
-    memcpy(newpath, path, plen);
-    newpath[plen] = '/';
-    memcpy(newpath + plen + 1, file, flen + 1);
-    if(isFileOrDir(newpath) == 1){
-      enqueue(fileQueue,newpath);
-    }
-    if(isFileOrDir(newpath) == 2){
-      enqueue(dirQueue,newpath);
+    if(strcmp(file->d_name,".")!=0 && strcmp(file->d_name,"..")!=0){
+      char *fileName = file->d_name;
+      int plen = strlen(path);
+      int flen = strlen(fileName);
+      char* newpath = malloc(plen + flen +2);
+      memcpy(newpath, path, plen);
+      newpath[plen] = '/';
+      memcpy(newpath + plen + 1, fileName, flen + 1);
+      printf("%s",newpath);
+      if(isFileOrDir(newpath) == 1){
+        enqueue(fileQueue,newpath);
       }
-    free(fileName);
+      if(isFileOrDir(newpath) == 2){
+        enqueue(dirQueue,newpath);
+      }
+      free(newpath);
+    }
+
   }
   dirQueue-> numActiveThreads = dirQueue -> numActiveThreads-1;
   if(dirQueue->start == NULL && dirQueue -> numActiveThreads == 0)
