@@ -81,7 +81,7 @@ void* readDir(void *arg){
   struct Queue *fileQueue = args->fileQ;
   char* path;
   pthread_mutex_lock(&dirQueue->lock);
-  if(dirQueue -> start != NULL){
+  if(dirQueue -> start != NULL || dirQueue -> numActiveThreads != 0){
     dirQueue-> numActiveThreads = dirQueue -> numActiveThreads+1;
     path = dequeue(dirQueue); // needs to be in lock
   }
