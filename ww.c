@@ -14,6 +14,7 @@
 #define BUFFER_SIZE 5
 void wrap(int width,int fd_input,int fd_output);
 int isFileOrDir(char *name);
+bool traversalDone = false;
 
 struct Node {
   char *fileName;
@@ -24,7 +25,6 @@ struct Queue {
   struct Node *start;
   struct Node *end;
   int numActiveThreads;
-  bool free;
   pthread_mutex_t lock;
   pthread_cond_t dequeue;
 };
@@ -62,9 +62,11 @@ void enqueue(struct Queue *q, char *name) {
 
 char *dequeue(struct Queue *q) {
 
-    while(q->start == NULL) {
+    while(q->start == NULL && q->numActiveThreads !=0) {
       pthread_cond_wait(&q->dequeue, &q->lock);
     }
+    if(q->start == NULL )
+      return NULL;
     struct Node *temp = q->start; // temp is set to first item in queue
     if (q->start == q->end) {
       q->end = temp->next;
@@ -118,7 +120,11 @@ void* readDir(void *arg){
   if(path!= NULL)
     free(path);
   closedir(dir);
+  pthread_mutex_lock(&dirQueue->lock);
   dirQueue-> numActiveThreads = dirQueue -> numActiveThreads-1;
+  if(dirQueue->start == NULL && dirQueue -> numActiveThreads == 0)
+    pthread_cond_signal(&dirQueue->dequeue);
+  pthread_mutex_unlock(&dirQueue->lock);
   return NULL;
 }
 
@@ -126,8 +132,7 @@ void* wrapFiles(void *arg){
   struct Args *args = (struct Args *)arg;
   int width = args->width;
   struct Queue *fileQueue = args->fileQ;
-    struct Queue *dirQueue = args->dirQ;
-  while(fileQueue->start != NULL || dirQueue->numActiveThreads != 0 ){
+  while(fileQueue->start != NULL || traversalDone == false ){
     // checks if wrapping is allowed
     int closed;
     pthread_mutex_lock(&fileQueue->lock);
@@ -507,6 +512,8 @@ int main(int argc, char*argv[]) {
           pthread_join(dirThreads[x], NULL);
       }
     }
+    traversalDone = true;
+    pthread_cond_signal(&fQueue->dequeue);
     for(int x = 0; x < 1; x++){
       pthread_join(wrapThreads[x], NULL);
     }
