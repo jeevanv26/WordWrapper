@@ -39,7 +39,6 @@ void queue_init(struct Queue *q) {
   q->start = NULL;
   q->end = NULL;
   q->numActiveThreads = 0;
-  q-> free =false;
 
   pthread_mutex_init(&q->lock, NULL);
   pthread_cond_init(&q->dequeue, NULL);
@@ -81,12 +80,11 @@ void* readDir(void *arg){
   struct Args *args = (struct Args *)arg;
   struct Queue *dirQueue = args->dirQ;
   struct Queue *fileQueue = args->fileQ;
-  char* path;
+  char* path = NULL;
   pthread_mutex_lock(&dirQueue->lock);
   if(dirQueue -> start != NULL || dirQueue -> numActiveThreads != 0){
     dirQueue-> numActiveThreads = dirQueue -> numActiveThreads+1;
     path = dequeue(dirQueue); // needs to be in lock
-    printf("%s",path);
   }
   if(dirQueue->start == NULL && dirQueue -> numActiveThreads == 0)
     return NULL;
@@ -104,22 +102,21 @@ void* readDir(void *arg){
       int flen = strlen(fileName);
       char* newpath = malloc(plen + flen +2);
       memcpy(newpath, path, plen);
-      if(dirQueue->free == true)
-        free(path);
-      dirQueue->free = true;
+      path = NULL;
+      free(path);
       newpath[plen] = '/';
       memcpy(newpath + plen + 1, fileName, flen + 1);
-      printf("%s",newpath);
       if(isFileOrDir(newpath) == 1){
         enqueue(fileQueue,newpath);
       }
       if(isFileOrDir(newpath) == 2){
         enqueue(dirQueue,newpath);
       }
-    //  free(newpath);
-    }
 
+    }
   }
+  if(path!= NULL)
+    free(path);
   closedir(dir);
   dirQueue-> numActiveThreads = dirQueue -> numActiveThreads-1;
   return NULL;
@@ -156,7 +153,6 @@ void* wrapFiles(void *arg){
       closed = close(newfd);
       if (closed != 0) perror("Destination file not closed"); // return EXIT_FAILURE; (removed)
     }
-    if(fileQueue->free == true)
       free(fileName);
   }
   return NULL;
@@ -488,7 +484,10 @@ int main(int argc, char*argv[]) {
     pthread_t dirThreads[1];
     struct Args *args = (struct Args *)malloc(sizeof(struct Args));
     char *dirName = argv[3];
-    enqueue(dQueue,dirName);
+    int size = strlen(dirName)+1;
+    char *name = malloc(size * sizeof(char));
+    name[size-1]='\0';
+    enqueue(dQueue,name);
     int count = 0;
     for(int x = 0; x < 1; x++){
       args->dirQ = dQueue;
