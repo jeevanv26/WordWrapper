@@ -61,11 +61,9 @@ void enqueue(struct Queue *q, char *name) {
 
 char *dequeue(struct Queue *q) {
 
-    while(q->start == NULL && q-> numActiveThreads!=0) {
+    while(q->start == NULL) {
       pthread_cond_wait(&q->dequeue, &q->lock);
     }
-    if(q->start == NULL && q -> numActiveThreads == 0)
-      return NULL; //not exit_failure. Just means the thread doesn't need to do any work
     struct Node *temp = q->start; // temp is set to first item in queue
     if (q->start == q->end) {
       q->end = temp->next;
@@ -81,21 +79,23 @@ void* readDir(void *arg){
   struct Args *args = (struct Args *)arg;
   struct Queue *dirQueue = args->dirQ;
   struct Queue *fileQueue = args->fileQ;
-  char* path = dequeue(dirQueue);
+  char* path;
   pthread_mutex_lock(&dirQueue->lock);
-  dirQueue-> numActiveThreads = dirQueue -> numActiveThreads+1;
-  
+  if(dirQueue -> start != NULL){
+    dirQueue-> numActiveThreads = dirQueue -> numActiveThreads+1;
+    path = dequeue(dirQueue); // needs to be in lock
+  }
+  if(dirQueue->start == NULL && dirQueue -> numActiveThreads == 0)
+    return NULL;
   pthread_mutex_unlock(&dirQueue->lock);
   DIR* dir = opendir(path); // path seems to be root cause
+
   if(!dir){
-    dirQueue-> numActiveThreads = dirQueue -> numActiveThreads-1;
-    if(dirQueue->start == NULL && dirQueue -> numActiveThreads == 0)
-      pthread_cond_signal(&dirQueue->dequeue);
     return NULL;
   }
   struct dirent *file;
   while((file = readdir(dir))!= NULL) {
-    if(strcmp(file->d_name,".")!=0 && strcmp(file->d_name,"wrap.")!=0){ // changed .. to wrap.
+    if(strcmp(file->d_name,".")!=0 && strcmp(file->d_name,"..")!=0){ // we check .wrap in the file threads, this was for another case(there are default directories in linux)
       char *fileName = file->d_name;
       int plen = strlen(path);
       int flen = strlen(fileName);
@@ -115,8 +115,6 @@ void* readDir(void *arg){
 
   }
   dirQueue-> numActiveThreads = dirQueue -> numActiveThreads-1;
-  if(dirQueue->start == NULL && dirQueue -> numActiveThreads == 0)
-    pthread_cond_signal(&dirQueue->dequeue);
   return NULL;
 }
 
@@ -129,11 +127,9 @@ void* wrapFiles(void *arg){
     // checks if wrapping is allowed
     int closed;
     pthread_mutex_lock(&fileQueue->lock);
-    char* fileName = dequeue(fileQueue);
+      char* fileName = dequeue(fileQueue); // needs to be in lock
     pthread_mutex_unlock(&fileQueue->lock);
     if(!fileName){
-      if(fileQueue->start != NULL && dirQueue->numActiveThreads != 0)
-        pthread_cond_signal(&fileQueue->dequeue);
       return NULL;
     }
 
@@ -154,8 +150,6 @@ void* wrapFiles(void *arg){
       if (closed != 0) perror("Destination file not closed"); // return EXIT_FAILURE; (removed)
     }
   }
-  if(fileQueue->start != NULL && dirQueue->numActiveThreads != 0)
-    pthread_cond_signal(&fileQueue->dequeue);;
   return NULL;
 }
 
@@ -489,7 +483,7 @@ int main(int argc, char*argv[]) {
     memset(dirName + strlen(argv[3]), '\0', 1);
     enqueue(dQueue,dirName);
     int count = 0;
-   
+
     for(int x = 0; x < numWrapThreads; x++){
       args->dirQ = dQueue;
       args->fileQ = fQueue;
@@ -578,7 +572,6 @@ int main(int argc, char*argv[]) {
 //         }
 //      }
 //   return EXIT_SUCCESS;
-//   }
+   }
     return EXIT_SUCCESS;
   }
-}
