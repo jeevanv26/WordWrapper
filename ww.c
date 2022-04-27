@@ -24,6 +24,7 @@ struct Queue {
   struct Node *start;
   struct Node *end;
   int numActiveThreads;
+  bool free;
   pthread_mutex_t lock;
   pthread_cond_t dequeue;
 };
@@ -38,6 +39,7 @@ void queue_init(struct Queue *q) {
   q->start = NULL;
   q->end = NULL;
   q->numActiveThreads = 0;
+  q-> free =false;
 
   pthread_mutex_init(&q->lock, NULL);
   pthread_cond_init(&q->dequeue, NULL);
@@ -84,6 +86,7 @@ void* readDir(void *arg){
   if(dirQueue -> start != NULL || dirQueue -> numActiveThreads != 0){
     dirQueue-> numActiveThreads = dirQueue -> numActiveThreads+1;
     path = dequeue(dirQueue); // needs to be in lock
+    printf("%s",path);
   }
   if(dirQueue->start == NULL && dirQueue -> numActiveThreads == 0)
     return NULL;
@@ -101,6 +104,9 @@ void* readDir(void *arg){
       int flen = strlen(fileName);
       char* newpath = malloc(plen + flen +2);
       memcpy(newpath, path, plen);
+      if(dirQueue->free == true)
+        free(path);
+      dirQueue->free = true;
       newpath[plen] = '/';
       memcpy(newpath + plen + 1, fileName, flen + 1);
       printf("%s",newpath);
@@ -110,10 +116,11 @@ void* readDir(void *arg){
       if(isFileOrDir(newpath) == 2){
         enqueue(dirQueue,newpath);
       }
-      free(newpath);
+    //  free(newpath);
     }
 
   }
+  closedir(dir);
   dirQueue-> numActiveThreads = dirQueue -> numActiveThreads-1;
   return NULL;
 }
@@ -149,6 +156,8 @@ void* wrapFiles(void *arg){
       closed = close(newfd);
       if (closed != 0) perror("Destination file not closed"); // return EXIT_FAILURE; (removed)
     }
+    if(fileQueue->free == true)
+      free(fileName);
   }
   return NULL;
 }
@@ -474,17 +483,14 @@ int main(int argc, char*argv[]) {
     } else {
       return EXIT_FAILURE;
     }
-
-    pthread_t wrapThreads[numWrapThreads];
-    pthread_t dirThreads[numDirThreads];
+    printf("%d%d",numDirThreads,numWrapThreads);
+    pthread_t wrapThreads[1];
+    pthread_t dirThreads[1];
     struct Args *args = (struct Args *)malloc(sizeof(struct Args));
-    char *dirName = (char *)malloc(strlen(argv[3]) + 1);
-    memcpy(dirName, argv[3], strlen(argv[3]));
-    memset(dirName + strlen(argv[3]), '\0', 1);
+    char *dirName = argv[3];
     enqueue(dQueue,dirName);
     int count = 0;
-
-    for(int x = 0; x < numWrapThreads; x++){
+    for(int x = 0; x < 1; x++){
       args->dirQ = dQueue;
       args->fileQ = fQueue;
       args->width = width;
@@ -493,16 +499,16 @@ int main(int argc, char*argv[]) {
     }
     //printf("num of wrap threads are: %d", count);
     while(dQueue->numActiveThreads !=0 || dQueue->start != NULL){
-      for(int x = 0; x < numDirThreads; x++){
+      for(int x = 0; x < 1; x++){
         args->dirQ = dQueue;
         args->fileQ = fQueue;
         pthread_create(&dirThreads[x], NULL, readDir,args);
       }
-      for(int x = 0; x < numDirThreads; x++){
+      for(int x = 0; x < 1; x++){
           pthread_join(dirThreads[x], NULL);
       }
     }
-    for(int x = 0; x < numWrapThreads; x++){
+    for(int x = 0; x < 1; x++){
       pthread_join(wrapThreads[x], NULL);
     }
 
