@@ -81,11 +81,12 @@ void* readDir(void *arg){
   struct Args *args = (struct Args *)arg;
   struct Queue *dirQueue = args->dirQ;
   struct Queue *fileQueue = args->fileQ;
+  char* path = dequeue(dirQueue);
   pthread_mutex_lock(&dirQueue->lock);
   dirQueue-> numActiveThreads = dirQueue -> numActiveThreads+1;
-  char* path = dequeue(dirQueue);
+  
   pthread_mutex_unlock(&dirQueue->lock);
-  DIR* dir = opendir(path);
+  DIR* dir = opendir(path); // path seems to be root cause
   if(!dir){
     dirQueue-> numActiveThreads = dirQueue -> numActiveThreads-1;
     if(dirQueue->start == NULL && dirQueue -> numActiveThreads == 0)
@@ -94,7 +95,7 @@ void* readDir(void *arg){
   }
   struct dirent *file;
   while((file = readdir(dir))!= NULL) {
-    if(strcmp(file->d_name,".")!=0 && strcmp(file->d_name,"..")!=0){
+    if(strcmp(file->d_name,".")!=0 && strcmp(file->d_name,"wrap.")!=0){ // changed .. to wrap.
       char *fileName = file->d_name;
       int plen = strlen(path);
       int flen = strlen(fileName);
@@ -464,6 +465,7 @@ int main(int argc, char*argv[]) {
   int width = atoi(argv[2]);
   assert(width > 0);
 
+  // num of threads are not being read correctly
   int thread = strlen(argv[1]);
   if (argc == 4) {
     if(thread == 2) { // if ./ww -r 20 FileOrDir
@@ -479,17 +481,23 @@ int main(int argc, char*argv[]) {
       return EXIT_FAILURE;
     }
 
-    pthread_t *wrapThreads = (pthread_t*)malloc(numWrapThreads *sizeof(pthread_t));
-    pthread_t *dirThreads = (pthread_t*)malloc(numDirThreads *sizeof(pthread_t));
+    pthread_t wrapThreads[numWrapThreads];
+    pthread_t dirThreads[numDirThreads];
     struct Args *args = (struct Args *)malloc(sizeof(struct Args));
-    char *dirName = argv[3];
+    char *dirName = (char *)malloc(strlen(argv[3]) + 1);
+    memcpy(dirName, argv[3], strlen(argv[3]));
+    memset(dirName + strlen(argv[3]), '\0', 1);
     enqueue(dQueue,dirName);
+    int count = 0;
+   
     for(int x = 0; x < numWrapThreads; x++){
       args->dirQ = dQueue;
       args->fileQ = fQueue;
       args->width = width;
       pthread_create(&wrapThreads[x], NULL, wrapFiles,args);
+      count++;
     }
+    //printf("num of wrap threads are: %d", count);
     while(dQueue->numActiveThreads !=0 || dQueue->start != NULL){
       for(int x = 0; x < numDirThreads; x++){
         args->dirQ = dQueue;
@@ -504,9 +512,10 @@ int main(int argc, char*argv[]) {
       pthread_join(wrapThreads[x], NULL);
     }
 
-    free(wrapThreads);
-    free(dirThreads);
+//     free(wrapThreads);
+//     free(dirThreads);
     free(fQueue);
+    free(dQueue);
     free(args);
 
   //Standard input
