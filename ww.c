@@ -62,7 +62,7 @@ void enqueue(struct Queue *q, char *name) {
 
 char *dequeue(struct Queue *q) {
 
-    while(q->start == NULL && q->numActiveThreads !=0) {
+    while(q->start == NULL && traversalDone == false) {
       pthread_cond_wait(&q->dequeue, &q->lock);
     }
     if(q->start == NULL )
@@ -84,12 +84,16 @@ void* readDir(void *arg){
   struct Queue *fileQueue = args->fileQ;
   char* path = NULL;
   pthread_mutex_lock(&dirQueue->lock);
-  if(dirQueue -> start != NULL || dirQueue -> numActiveThreads != 0){
+  if(dirQueue -> start != NULL || traversalDone == false){
     dirQueue-> numActiveThreads = dirQueue -> numActiveThreads+1;
     path = dequeue(dirQueue); // needs to be in lock
   }
-  if(dirQueue->start == NULL && dirQueue -> numActiveThreads == 0)
+  if(dirQueue->start == NULL && dirQueue -> numActiveThreads == 0){
+    traversalDone = true;
+    pthread_cond_signal(&dirQueue->dequeue);
+    pthread_mutex_unlock(&dirQueue->lock);
     return NULL;
+  }
   pthread_mutex_unlock(&dirQueue->lock);
   DIR* dir = opendir(path); // path seems to be root cause
 
@@ -97,6 +101,7 @@ void* readDir(void *arg){
     return NULL;
   }
   struct dirent *file;
+  printf("%s",path);
   while((file = readdir(dir))!= NULL) {
     if(strcmp(file->d_name,".")!=0 && strcmp(file->d_name,"..")!=0){ // we check .wrap in the file threads, this was for another case(there are default directories in linux)
       char *fileName = file->d_name;
@@ -108,6 +113,7 @@ void* readDir(void *arg){
       free(path);
       newpath[plen] = '/';
       memcpy(newpath + plen + 1, fileName, flen + 1);
+      printf("%s",newpath);
       if(isFileOrDir(newpath) == 1){
         enqueue(fileQueue,newpath);
       }
@@ -122,8 +128,10 @@ void* readDir(void *arg){
   closedir(dir);
   pthread_mutex_lock(&dirQueue->lock);
   dirQueue-> numActiveThreads = dirQueue -> numActiveThreads-1;
-  if(dirQueue->start == NULL && dirQueue -> numActiveThreads == 0)
+  if(dirQueue->start == NULL && dirQueue -> numActiveThreads == 0){
+    traversalDone = true;
     pthread_cond_signal(&dirQueue->dequeue);
+  }
   pthread_mutex_unlock(&dirQueue->lock);
   return NULL;
 }
@@ -485,24 +493,26 @@ int main(int argc, char*argv[]) {
       return EXIT_FAILURE;
     }
     printf("%d%d",numDirThreads,numWrapThreads);
-    pthread_t wrapThreads[1];
+    //pthread_t wrapThreads[1];
     pthread_t dirThreads[1];
     struct Args *args = (struct Args *)malloc(sizeof(struct Args));
     char *dirName = argv[3];
     int size = strlen(dirName)+1;
     char *name = malloc(size * sizeof(char));
-    name[size-1]='\0';
+    for(int x=0; x< size; x++){
+      name[x]=dirName[x];
+    }
     enqueue(dQueue,name);
-    int count = 0;
-    for(int x = 0; x < 1; x++){
+    //int count = 0;
+    /*for(int x = 0; x < 1; x++){
       args->dirQ = dQueue;
       args->fileQ = fQueue;
       args->width = width;
       pthread_create(&wrapThreads[x], NULL, wrapFiles,args);
       count++;
-    }
+    }*/
     //printf("num of wrap threads are: %d", count);
-    while(dQueue->numActiveThreads !=0 || dQueue->start != NULL){
+    while(traversalDone == false || dQueue->start != NULL){
       for(int x = 0; x < 1; x++){
         args->dirQ = dQueue;
         args->fileQ = fQueue;
@@ -512,11 +522,12 @@ int main(int argc, char*argv[]) {
           pthread_join(dirThreads[x], NULL);
       }
     }
-    traversalDone = true;
+   //free(name);
+  /*  traversalDone = true;
     pthread_cond_signal(&fQueue->dequeue);
     for(int x = 0; x < 1; x++){
       pthread_join(wrapThreads[x], NULL);
-    }
+    }*/
 
 //     free(wrapThreads);
 //     free(dirThreads);
