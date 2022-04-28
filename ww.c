@@ -200,16 +200,25 @@ void* wrapFiles(void *arg){
       counter++;
     }
     char*ptr = &fileName[nameLength-counter];
+    int num = nameLength - counter;
+    //int ptrLength = strlen(ptr);
     if ( !((strncmp(".", ptr, 1) == 0) || (strncmp("wrap.", ptr, 5) == 0)) ) {
       int fd = open(fileName, O_RDONLY);
-      char *wrapped = malloc(sizeof(char) * 6 + nameLength);
-      memcpy(wrapped,fileName,nameLength);
-      wrapped[counter] = 'w';
-      wrapped[counter+1]='r';
-      wrapped[counter+2]='a';
-      wrapped[counter+3]='p';
-      wrapped[counter+4]='.';
-      memcpy(wrapped + counter + 5, ptr, (nameLength-counter) + 1);
+      char *wrapped = malloc( nameLength+6);
+      for(int x = 0; x < num; x++){
+        wrapped[x]=fileName[x];
+      }
+      wrapped[num]='w';
+      wrapped[num+1]='r';
+      wrapped[num+2]='a';
+      wrapped[num+3]='p';
+      wrapped[num+4]='.';
+      int counter2 = 0;
+      for(int x=num+5; x <nameLength+5; x++){
+        wrapped[x]=ptr[counter2];
+        counter2++;
+      }
+      wrapped[nameLength+5]='\0';
       // opens new destination file
       int newfd = open(wrapped, O_WRONLY | O_TRUNC | O_CREAT, 0666);
       wrap(width, fd, newfd);
@@ -546,7 +555,7 @@ int main(int argc, char*argv[]) {
       return EXIT_FAILURE;
     }
     printf("%d%d",numDirThreads,numWrapThreads);
-    pthread_t wrapThreads[1];
+    pthread_t wrapThreads[30];
     pthread_t dirThreads[30];
     struct Args *args = (struct Args *)malloc(sizeof(struct Args));
     char *dirName = argv[3];
@@ -557,7 +566,7 @@ int main(int argc, char*argv[]) {
     }
     enqueue(dQueue,name);
     //int count = 0;
-    for(int x = 0; x < 1; x++){
+    for(int x = 0; x < 30; x++){
       args->dirQ = dQueue;
       args->fileQ = fQueue;
       args->width = width;
@@ -577,7 +586,7 @@ int main(int argc, char*argv[]) {
     }
    traversalDone = true;
     pthread_cond_broadcast(&fQueue->dequeue2);
-    for(int x = 0; x < 1; x++){
+    for(int x = 0; x < 30; x++){
       pthread_join(wrapThreads[x], NULL);
     }
 
@@ -650,4 +659,3 @@ int main(int argc, char*argv[]) {
    }
     return EXIT_SUCCESS;
   }
-
