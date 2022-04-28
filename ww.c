@@ -232,7 +232,67 @@ void* wrapFiles(void *arg){
   }
   return NULL;
 }
-
+bool parseArgument(char* argument, int *wrapT, int *dirT){
+  int argumentLength = strlen(argument);
+  int counter1 = 0;
+  int counter2 = 0;
+  if(argument[0]!='-'&& argument[1]!='r')
+    return false;
+  if(argumentLength == 2){
+    *wrapT=1;
+    *dirT=1;
+  }
+  for(int x = 2; x< argumentLength; x++){
+    if(argument[x]== ',')
+      break;
+    counter1++;
+  }
+  for(int x = counter1+3; x<argumentLength; x++){
+    counter2++;
+  }
+  if(counter1==0)
+    return false;
+  char* first = malloc(counter1+1);
+  int counter4=0;
+  for(int x =2; x < counter1+2; x++){
+    if(isdigit(argument[x])){
+      first[counter4]=argument[x];
+      counter4++;
+    }
+    else{
+      free(first);
+      return false;
+    }
+  }
+  first[counter1]='\0';
+  if(counter2 == 0){
+    *wrapT = atoi(first);
+    *dirT = 1;
+    free(first);
+    return true;
+  }
+  else{
+    char* second = malloc(counter2+1);
+    int counter3 =0;
+    for(int x=counter1+3; x< argumentLength; x++){
+      if(isdigit(argument[x])){
+        second[counter3]=argument[x];
+        counter3++;
+      }
+      else{
+        free(first);
+        free(second);
+        return false;
+      }
+    }
+    second[counter2]='\0';
+    *wrapT = atoi(first);
+    *dirT = atoi(second);
+    free(first);
+    free(second);
+  }
+  return true;
+}
 void wrap(int width, int fd_input, int fd_output){
   char buffer[BUFFER_SIZE];
    int bytes_read= read(fd_input,buffer, BUFFER_SIZE);
@@ -534,31 +594,24 @@ int main(int argc, char*argv[]) {
   queue_init2(fQueue);
 
     if (argc == 1 || argc > 4) {
+        free(dQueue);
+        free(fQueue);
         return EXIT_FAILURE;
      } // change last condition to argc > 4
-  int width = atoi(argv[2]);
-  assert(width > 0);
+  int width = 0;
 
-  // num of threads are not being read correctly
-  int thread = strlen(argv[1]);
-  char* argumentOne =argv[1];
   //printf("%s",argumentOne);
   if (argc == 4) {
-    if(thread == 2) { // if ./ww -r 20 FileOrDir
-      numDirThreads = 1;
-      numWrapThreads = 1;
-    } else if(thread == 3) { // if ./ww -rN 20 FileOrDir
-        numDirThreads = 1;
-        numWrapThreads = argumentOne[2]-'0';
-    } else if(thread == 5) { // if ./ww -rN,M 20 FileOrDir
-        numDirThreads = argumentOne[2]-'0';
-        numWrapThreads = argumentOne[4]-'0';
-    } else {
+    char* argumentOne =argv[1];
+    width = atoi(argv[2]);
+    assert(width > 0);
+    bool success = parseArgument(argumentOne,&numWrapThreads,&numDirThreads);
+    if(success == false || numWrapThreads == 0 || numDirThreads == 0){
       free(dQueue);
       free(fQueue);
       return EXIT_FAILURE;
     }
-    
+
     pthread_t *wrapThreads = malloc(numWrapThreads * sizeof(pthread_t));
     pthread_t *dirThreads = malloc(numDirThreads * sizeof(pthread_t));
     //pthread_t wrapThreads[30];
@@ -598,19 +651,21 @@ int main(int argc, char*argv[]) {
 
     free(wrapThreads);
     free(dirThreads);
-    free(fQueue);
-    free(dQueue);
     free(args);
   }
   //Standard input
   else if(argc == 2) {
+    width = atoi(argv[1]);
+    assert(width > 0);
      wrap(width,0,1);
    }
   else{
-  int f = isFileOrDir(argv[3]);
+    width = atoi(argv[1]);
+    assert(width > 0);
+  int f = isFileOrDir(argv[2]);
      // file
      if (f == 1) {
-     int fd = open(argv[3], O_RDONLY);
+     int fd = open(argv[2], O_RDONLY);
       if(fd < 0){
      // there was some error in opening the file
        perror("couldn't open file");
@@ -621,7 +676,7 @@ int main(int argc, char*argv[]) {
    }
      // direc
      if (f == 2) {
-       char *dirName = argv[3];
+       char *dirName = argv[2];
         int closed; // var to check if files are closed or not
         // makes struct for directory
         struct dirent *file;
@@ -662,5 +717,7 @@ int main(int argc, char*argv[]) {
       }
      }
    }
+   free(fQueue);
+   free(dQueue);
     return EXIT_SUCCESS;
   }
