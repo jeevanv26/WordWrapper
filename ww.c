@@ -62,7 +62,7 @@ void enqueue(struct Queue *q, char *name) {
 
 char *dequeue(struct Queue *q) {
 
-    while(q->start == NULL && traversalDone == false) {
+    while(q->start == NULL && q->numActiveThreads!=0) {
       pthread_cond_wait(&q->dequeue, &q->lock);
     }
     if(q->start == NULL )
@@ -75,7 +75,7 @@ char *dequeue(struct Queue *q) {
 
     char *dequeuedFile=temp->fileName;
     free(temp);
-    q->numActiveThreads = q->numActiveThreads + 1;
+    q-> numActiveThreads = q -> numActiveThreads+1;
   return dequeuedFile;
 }
 void* readDir(void *arg){
@@ -85,17 +85,14 @@ void* readDir(void *arg){
   struct Queue *fileQueue = args->fileQ;
   char* path = NULL;
   pthread_mutex_lock(&dirQueue->lock);
-  if(dirQueue -> start != NULL || traversalDone == false){
-    dirQueue-> numActiveThreads = dirQueue -> numActiveThreads+1;
+  if(dirQueue -> start != NULL || dirQueue->numActiveThreads!=0){
     path = dequeue(dirQueue); // needs to be in lock
   }
-  if(dirQueue->start == NULL && dirQueue -> numActiveThreads == 0){
+  if(path == NULL){
     traversalDone = true;
-    pthread_cond_signal(&dirQueue->dequeue);
     pthread_mutex_unlock(&dirQueue->lock);
     return NULL;
   }
-  if(path == NULL) return NULL;
   pthread_mutex_unlock(&dirQueue->lock);
   DIR* dir = opendir(path); // path seems to be root cause
 
@@ -122,13 +119,13 @@ void* readDir(void *arg){
 
     }
   }
-    free(path);
+  free(path);
   closedir(dir);
   pthread_mutex_lock(&dirQueue->lock);
   dirQueue-> numActiveThreads = dirQueue -> numActiveThreads-1;
   if(dirQueue->start == NULL && dirQueue -> numActiveThreads == 0){
     traversalDone = true;
-    pthread_cond_signal(&dirQueue->dequeue);
+    pthread_cond_broadcast(&dirQueue->dequeue);
   }
   pthread_mutex_unlock(&dirQueue->lock);
   return NULL;
@@ -483,16 +480,16 @@ int main(int argc, char*argv[]) {
       numWrapThreads = 1;
     } else if(thread == 3) { // if ./ww -rN 20 FileOrDir
         numDirThreads = 1;
-        numWrapThreads = atoi(argv[1]);
+        numWrapThreads = argv[1][2];
     } else if(thread == 5) { // if ./ww -rN,M 20 FileOrDir
-        numDirThreads = argv[1][2] - '0';
-        numWrapThreads = argv[1][4] - '0';
+        numDirThreads = argv[1][2];
+        numWrapThreads = argv[1][4];
     } else {
       return EXIT_FAILURE;
     }
     printf("%d%d",numDirThreads,numWrapThreads);
     //pthread_t wrapThreads[1];
-    pthread_t dirThreads[1];
+    pthread_t dirThreads[30];
     struct Args *args = (struct Args *)malloc(sizeof(struct Args));
     char *dirName = argv[3];
     int size = strlen(dirName)+1;
@@ -511,12 +508,12 @@ int main(int argc, char*argv[]) {
     }*/
     //printf("num of wrap threads are: %d", count);
     while(traversalDone == false || dQueue->start != NULL){
-      for(int x = 0; x < 1; x++){
+      for(int x = 0; x < 30; x++){
         args->dirQ = dQueue;
         args->fileQ = fQueue;
         pthread_create(&dirThreads[x], NULL, readDir,args);
       }
-      for(int x = 0; x < 1; x++){
+      for(int x = 0; x < 30; x++){
           pthread_join(dirThreads[x], NULL);
       }
     }
