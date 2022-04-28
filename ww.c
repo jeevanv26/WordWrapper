@@ -232,15 +232,15 @@ void* wrapFiles(void *arg){
   }
   return NULL;
 }
-bool parseArgument(char* argument, int *wrapT, int *dirT){
+bool parseArgument(char* argument, int *dirT, int *wrapT){
   int argumentLength = strlen(argument);
   int counter1 = 0;
   int counter2 = 0;
   if(argument[0]!='-'&& argument[1]!='r')
     return false;
   if(argumentLength == 2){
-    *wrapT=1;
     *dirT=1;
+    *wrapT=1;
   }
   for(int x = 2; x< argumentLength; x++){
     if(argument[x]== ',')
@@ -266,8 +266,8 @@ bool parseArgument(char* argument, int *wrapT, int *dirT){
   }
   first[counter1]='\0';
   if(counter2 == 0){
-    *wrapT = atoi(first);
-    *dirT = 1;
+    *dirT = atoi(first);
+    *wrapT = 1;
     free(first);
     return true;
   }
@@ -286,8 +286,8 @@ bool parseArgument(char* argument, int *wrapT, int *dirT){
       }
     }
     second[counter2]='\0';
-    *wrapT = atoi(first);
-    *dirT = atoi(second);
+    *dirT = atoi(first);
+    *wrapT = atoi(second);
     free(first);
     free(second);
   }
@@ -605,11 +605,10 @@ int main(int argc, char*argv[]) {
     char* argumentOne =argv[1];
     width = atoi(argv[2]);
     assert(width > 0);
-    bool success = parseArgument(argumentOne,&numWrapThreads,&numDirThreads);
+    bool success = parseArgument(argumentOne,&numDirThreads,&numWrapThreads);
     if(success == false || numWrapThreads == 0 || numDirThreads == 0){
       free(dQueue);
       free(fQueue);
-      printf("Invalid thread\n");
       return EXIT_FAILURE;
     }
 
