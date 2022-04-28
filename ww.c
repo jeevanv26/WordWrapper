@@ -266,8 +266,8 @@ bool parseArgument(char* argument, int *dirT, int *wrapT){
   }
   first[counter1]='\0';
   if(counter2 == 0){
-    *dirT = atoi(first);
-    *wrapT = 1;
+    *wrapT = atoi(first);
+    *dirT = 1;
     free(first);
     return true;
   }
