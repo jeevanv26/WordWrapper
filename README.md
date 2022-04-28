@@ -68,10 +68,8 @@ Test Case 2: Testing with directories containing two subdirectories: one with no
 			> foo2
 				> fooTest
 				> fooTest2
-					> fooTest
-						> .stuff.txt
-						> wrap.stuff.txt
-					> fooTest2
+					> .stuff.txt
+					> wrap.stuff.txt
 
 	Input: ./ww -r3 20 foo2
 
@@ -266,7 +264,7 @@ Test Case 5: Tests with negative theads
 		> foo4
 			> hello.txt
 
-	Output: Invalid thread. Since the second directory thread was negative.			
+	Output: Does nothing since the second directory thread was negative.			
 
 p2 stuff:
 Test Case 0: Tests if the inputed width is valid (>0)
