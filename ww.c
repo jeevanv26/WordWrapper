@@ -554,6 +554,8 @@ int main(int argc, char*argv[]) {
         numDirThreads = argumentOne[2]-'0';
         numWrapThreads = argumentOne[4]-'0';
     } else {
+      free(dQueue);
+      free(fQueue);
       return EXIT_FAILURE;
     }
     
