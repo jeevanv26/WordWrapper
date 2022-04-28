@@ -219,6 +219,55 @@ Test Case 4: Testing with a directory containing multiple subdirectories and tho
 					> text.txt
 					> wrap.y.txt
 					> wrap.text.txt
+Test Case 5: Tests with negative theads
+	
+	Input: ./ww -r10,-10 20 foo4
+
+	> p3 (working directory)
+	> foo
+		> bar.txt
+		> wrap.bar.txt
+		> baz
+			> quux.txt
+			> wrap.quux.txt
+		> foo2
+			> fooTest
+				> .stuff.txt
+				> book.txt
+				> wrap.stuff.txt
+				> wrap.book.txt
+				> fooSub
+					> text.txt
+					> wrap.text.txt
+				> fooSub2
+					> test.txt
+					> wrap.test.txt
+			> fooTest2
+				> stuff.txt
+				> wrap.stuff.txt
+				> fooSub3
+					> test.txt
+					> wrap.test.txt
+		> foo3
+			> foo3Test
+				> stuff.txt
+				> stuff2.txt
+				> stuff3.txt
+				> .stuff.txt
+				> wrap.y.txt
+				> wrap.stuff,txt
+				> wrap.stuff2.txt
+				> wrap.stuff3.txt
+			> foo3Test2
+			> foo3Test3
+				> text.txt
+				> wrap.y.txt
+				> wrap.text.txt
+		> foo4
+			> hello.txt
+
+	Output: Invalid thread. Since the second directory thread was negative.			
+
 p2 stuff:
 Test Case 0: Tests if the inputed width is valid (>0)
 
