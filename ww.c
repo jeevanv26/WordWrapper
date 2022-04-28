@@ -75,6 +75,7 @@ char *dequeue(struct Queue *q) {
 
     char *dequeuedFile=temp->fileName;
     free(temp);
+    q->numActiveThreads = q->numActiveThreads + 1;
   return dequeuedFile;
 }
 void* readDir(void *arg){
@@ -94,6 +95,7 @@ void* readDir(void *arg){
     pthread_mutex_unlock(&dirQueue->lock);
     return NULL;
   }
+  if(path == NULL) return NULL;
   pthread_mutex_unlock(&dirQueue->lock);
   DIR* dir = opendir(path); // path seems to be root cause
 
@@ -481,10 +483,10 @@ int main(int argc, char*argv[]) {
       numWrapThreads = 1;
     } else if(thread == 3) { // if ./ww -rN 20 FileOrDir
         numDirThreads = 1;
-        numWrapThreads = argv[1][2];
+        numWrapThreads = atoi(argv[1]);
     } else if(thread == 5) { // if ./ww -rN,M 20 FileOrDir
-        numDirThreads = argv[1][2];
-        numWrapThreads = argv[1][4];
+        numDirThreads = argv[1][2] - '0';
+        numWrapThreads = argv[1][4] - '0';
     } else {
       return EXIT_FAILURE;
     }
