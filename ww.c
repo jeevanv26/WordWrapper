@@ -101,7 +101,6 @@ void* readDir(void *arg){
     return NULL;
   }
   struct dirent *file;
-  printf("%s",path);
   while((file = readdir(dir))!= NULL) {
     if(strcmp(file->d_name,".")!=0 && strcmp(file->d_name,"..")!=0){ // we check .wrap in the file threads, this was for another case(there are default directories in linux)
       char *fileName = file->d_name;
@@ -109,8 +108,6 @@ void* readDir(void *arg){
       int flen = strlen(fileName);
       char* newpath = malloc(plen + flen +2);
       memcpy(newpath, path, plen);
-      path = NULL;
-      free(path);
       newpath[plen] = '/';
       memcpy(newpath + plen + 1, fileName, flen + 1);
       printf("%s",newpath);
@@ -123,7 +120,6 @@ void* readDir(void *arg){
 
     }
   }
-  if(path!= NULL)
     free(path);
   closedir(dir);
   pthread_mutex_lock(&dirQueue->lock);
@@ -522,7 +518,6 @@ int main(int argc, char*argv[]) {
           pthread_join(dirThreads[x], NULL);
       }
     }
-   //free(name);
   /*  traversalDone = true;
     pthread_cond_signal(&fQueue->dequeue);
     for(int x = 0; x < 1; x++){
