@@ -609,6 +609,7 @@ int main(int argc, char*argv[]) {
     if(success == false || numWrapThreads == 0 || numDirThreads == 0){
       free(dQueue);
       free(fQueue);
+      printf("Invalid thread\n");
       return EXIT_FAILURE;
     }
 
