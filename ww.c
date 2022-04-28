@@ -527,36 +527,40 @@ int main(int argc, char*argv[]) {
   struct Queue *dQueue = (struct Queue*) malloc(sizeof(struct Queue));
   struct Queue2 *fQueue = (struct Queue2*) malloc(sizeof(struct Queue2));
 
-  int numDirThreads;
-  int numWrapThreads;
+  int numDirThreads=0;
+  int numWrapThreads=0;
 
   queue_init(dQueue);
   queue_init2(fQueue);
 
-//    if (argc == 1 || argc > 3) {
-//         return EXIT_FAILURE;
-//     } // change last condition to argc > 5
+    if (argc == 1 || argc > 4) {
+        return EXIT_FAILURE;
+     } // change last condition to argc > 4
   int width = atoi(argv[2]);
   assert(width > 0);
 
   // num of threads are not being read correctly
   int thread = strlen(argv[1]);
+  char* argumentOne =argv[1];
+  //printf("%s",argumentOne);
   if (argc == 4) {
     if(thread == 2) { // if ./ww -r 20 FileOrDir
       numDirThreads = 1;
       numWrapThreads = 1;
     } else if(thread == 3) { // if ./ww -rN 20 FileOrDir
         numDirThreads = 1;
-        numWrapThreads = argv[1][2];
+        numWrapThreads = argumentOne[2]-'0';
     } else if(thread == 5) { // if ./ww -rN,M 20 FileOrDir
-        numDirThreads = argv[1][2];
-        numWrapThreads = argv[1][4];
+        numDirThreads = argumentOne[2]-'0';
+        numWrapThreads = argumentOne[4]-'0';
     } else {
       return EXIT_FAILURE;
     }
-    printf("%d%d",numDirThreads,numWrapThreads);
-    pthread_t wrapThreads[30];
-    pthread_t dirThreads[30];
+    
+    pthread_t *wrapThreads = malloc(numWrapThreads * sizeof(pthread_t));
+    pthread_t *dirThreads = malloc(numDirThreads * sizeof(pthread_t));
+    //pthread_t wrapThreads[30];
+    //pthread_t dirThreads[30];
     struct Args *args = (struct Args *)malloc(sizeof(struct Args));
     char *dirName = argv[3];
     int size = strlen(dirName)+1;
@@ -566,7 +570,7 @@ int main(int argc, char*argv[]) {
     }
     enqueue(dQueue,name);
     //int count = 0;
-    for(int x = 0; x < 30; x++){
+    for(int x = 0; x < numWrapThreads; x++){
       args->dirQ = dQueue;
       args->fileQ = fQueue;
       args->width = width;
@@ -575,87 +579,86 @@ int main(int argc, char*argv[]) {
     }
     //printf("num of wrap threads are: %d", count);
     while(traversalDone == false || dQueue->start != NULL){
-      for(int x = 0; x < 30; x++){
+      for(int x = 0; x < numDirThreads; x++){
         args->dirQ = dQueue;
         args->fileQ = fQueue;
         pthread_create(&dirThreads[x], NULL, readDir,args);
       }
-      for(int x = 0; x < 30; x++){
+      for(int x = 0; x < numDirThreads; x++){
           pthread_join(dirThreads[x], NULL);
       }
     }
    traversalDone = true;
     pthread_cond_broadcast(&fQueue->dequeue2);
-    for(int x = 0; x < 30; x++){
+    for(int x = 0; x < numWrapThreads; x++){
       pthread_join(wrapThreads[x], NULL);
     }
 
-//     free(wrapThreads);
-//     free(dirThreads);
+    free(wrapThreads);
+    free(dirThreads);
     free(fQueue);
     free(dQueue);
     free(args);
-
+  }
   //Standard input
-//   if(argc == 2) {
-//     wrap(width,0,1);
-//   }
-//   else{
-//     int f = isFileOrDir(argv[3]);
-//       // file
-//       if (f == 1) {
-//         int fd = open(argv[3], O_RDONLY);
-//         if(fd < 0){
-//           // there was some error in opening the file
-//         perror("couldn't open file");
-//         exit(EXIT_FAILURE);
-//         }
-//      wrap(width,fd,1);
-//      close(fd);
-//     }
-//      // direc
-//      if (f == 2) {
-//         char *dirName = argv[3];
-//         int closed; // var to check if files are closed or not
-//         // makes struct for directory
-//         struct dirent *file;
-//         DIR *dir = opendir(dirName); // opens directory
+  else if(argc == 2) {
+     wrap(width,0,1);
+   }
+  else{
+  int f = isFileOrDir(argv[3]);
+     // file
+     if (f == 1) {
+     int fd = open(argv[3], O_RDONLY);
+      if(fd < 0){
+     // there was some error in opening the file
+       perror("couldn't open file");
+       exit(EXIT_FAILURE);
+     }
+     wrap(width,fd,1);
+      close(fd);
+   }
+     // direc
+     if (f == 2) {
+       char *dirName = argv[3];
+        int closed; // var to check if files are closed or not
+        // makes struct for directory
+        struct dirent *file;
+        DIR *dir = opendir(dirName); // opens directory
 
-//         // switch directories
-//         chdir(dirName);
-//         int nameLength;
-//         if (dir) {
+         // switch directories
+         chdir(dirName);
+         int nameLength;
+         if (dir) {
 
-//            while ( (file = readdir(dir)) != NULL) {
-//               nameLength = strlen(file->d_name);
-//               char *fileName = malloc(sizeof(char) * nameLength + 1);
-//               strcpy(fileName, file->d_name);
-//               if (isFileOrDir(fileName) == 1) { // only focuses on files, ignores any other subdirectories within the parent directory
+           while ( (file = readdir(dir)) != NULL) {
+              nameLength = strlen(file->d_name);
+             char *fileName = malloc(sizeof(char) * nameLength + 1);
+             strcpy(fileName, file->d_name);
+              if (isFileOrDir(fileName) == 1) { // only focuses on files, ignores any other subdirectories within the parent directory
 
-//                 // checks if wrapping is allowed
-//                 if ( !((strncmp(".", fileName, 1) == 0) || (strncmp("wrap.", fileName, 5) == 0)) ) {
-//                   int fd = open(fileName, O_RDONLY);
-//                   char *wrapped = malloc(sizeof(char) * 6 + nameLength);
-//                   strcpy(wrapped, "wrap.");
-//                   strcat(wrapped, fileName); // concatenates "wrap." with given file name
+           // checks if wrapping is allowed
+            if ( !((strncmp(".", fileName, 1) == 0) || (strncmp("wrap.", fileName, 5) == 0)) ) {
+               int fd = open(fileName, O_RDONLY);
+               char *wrapped = malloc(sizeof(char) * 6 + nameLength);
+               strcpy(wrapped, "wrap.");
+              strcat(wrapped, fileName); // concatenates "wrap." with given file name
 
-//                   // opens new destination file
-//                   int newfd = open(wrapped, O_WRONLY | O_TRUNC | O_CREAT, 0666);
-//                   wrap(width, fd, newfd);
-//                   free(wrapped);
-//                   closed = close(fd);
-//                   if (closed != 0) perror("File not closed"); // return EXIT_FAILURE; (removed)
-//                   closed = close(newfd);
-//                   if (closed != 0) perror("Destination file not closed"); // return EXIT_FAILURE; (removed)
-//                 }
-//               }
-//            free(fileName);
-//            }
-//         closed = closedir(dir); // close directory when finished
-//         //if(closed!=0) perror("Directory not closed"); // return EXIT_FAILURE; (removed)
-//         }
-//      }
-//   return EXIT_SUCCESS;
+                // opens new destination file
+                 int newfd = open(wrapped, O_WRONLY | O_TRUNC | O_CREAT, 0666);
+                  wrap(width, fd, newfd);
+                   free(wrapped);
+                   closed = close(fd);
+                 if (closed != 0) perror("File not closed"); // return EXIT_FAILURE; (removed)
+                 closed = close(newfd);
+                 if (closed != 0) perror("Destination file not closed"); // return EXIT_FAILURE; (removed)
+                }
+               }
+           free(fileName);
+           }
+        closed = closedir(dir); // close directory when finished
+        //if(closed!=0) perror("Directory not closed"); // return EXIT_FAILURE; (removed)
+      }
+     }
    }
     return EXIT_SUCCESS;
   }
