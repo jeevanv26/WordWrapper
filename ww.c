@@ -29,9 +29,16 @@ struct Queue {
   pthread_cond_t dequeue;
 };
 
+struct Queue2 {
+  struct Node *start;
+  struct Node *end;
+  pthread_mutex_t lock2;
+  pthread_cond_t dequeue2;
+};
+
 struct Args{
   struct Queue* dirQ;
-  struct Queue *fileQ;
+  struct Queue2 *fileQ;
   int width;
 };
 
@@ -42,6 +49,13 @@ void queue_init(struct Queue *q) {
 
   pthread_mutex_init(&q->lock, NULL);
   pthread_cond_init(&q->dequeue, NULL);
+}
+
+void queue_init2(struct Queue2 *q) {
+  q->start = NULL;
+  q->end = NULL;
+  pthread_mutex_init(&q->lock2, NULL);
+  pthread_cond_init(&q->dequeue2, NULL);
 }
 
 void enqueue(struct Queue *q, char *name) {
@@ -57,6 +71,21 @@ void enqueue(struct Queue *q, char *name) {
     if(q->start == NULL) q->start = newNode; // nothing in queue, appends newNode in the queue
     pthread_cond_signal(&q->dequeue);
   pthread_mutex_unlock(&q->lock);
+  return;
+}
+void enqueue2(struct Queue2 *q, char *name) {
+  pthread_mutex_lock(&q->lock2);
+    struct Node *newNode = (struct Node *) malloc(sizeof(struct Node));
+    // allocates new node
+    newNode->next = NULL;
+    newNode->fileName = name;
+
+    if(q->end != NULL) q->end->next = newNode; // if last item exists then append newNode to it
+    q->end = newNode; // else the newNode becomes last
+
+    if(q->start == NULL) q->start = newNode; // nothing in queue, appends newNode in the queue
+    pthread_cond_signal(&q->dequeue2);
+  pthread_mutex_unlock(&q->lock2);
   return;
 }
 
@@ -78,11 +107,29 @@ char *dequeue(struct Queue *q) {
     q-> numActiveThreads = q -> numActiveThreads+1;
   return dequeuedFile;
 }
+
+char *dequeue2(struct Queue2 *q) {
+
+    while(q->start == NULL && traversalDone == false) {
+      pthread_cond_wait(&q->dequeue2, &q->lock2);
+    }
+    if(q->start == NULL )
+      return NULL;
+    struct Node *temp = q->start; // temp is set to first item in queue
+    if (q->start == q->end) {
+      q->end = temp->next;
+    }
+    q->start = temp->next; //
+
+    char *dequeuedFile=temp->fileName;
+    free(temp);
+  return dequeuedFile;
+}
 void* readDir(void *arg){
 
   struct Args *args = (struct Args *)arg;
   struct Queue *dirQueue = args->dirQ;
-  struct Queue *fileQueue = args->fileQ;
+  struct Queue2 *fileQueue = args->fileQ;
   char* path = NULL;
   pthread_mutex_lock(&dirQueue->lock);
   if(dirQueue -> start != NULL || dirQueue->numActiveThreads!=0){
@@ -109,9 +156,8 @@ void* readDir(void *arg){
       memcpy(newpath, path, plen);
       newpath[plen] = '/';
       memcpy(newpath + plen + 1, fileName, flen + 1);
-      printf("%s",newpath);
       if(isFileOrDir(newpath) == 1){
-        enqueue(fileQueue,newpath);
+        enqueue2(fileQueue,newpath);
       }
       if(isFileOrDir(newpath) == 2){
         enqueue(dirQueue,newpath);
@@ -134,24 +180,36 @@ void* readDir(void *arg){
 void* wrapFiles(void *arg){
   struct Args *args = (struct Args *)arg;
   int width = args->width;
-  struct Queue *fileQueue = args->fileQ;
+  struct Queue2 *fileQueue = args->fileQ;
   while(fileQueue->start != NULL || traversalDone == false ){
     // checks if wrapping is allowed
     int closed;
-    pthread_mutex_lock(&fileQueue->lock);
-      char* fileName = dequeue(fileQueue); // needs to be in lock
-    pthread_mutex_unlock(&fileQueue->lock);
-    if(!fileName){
+    char* fileName = NULL;
+    pthread_mutex_lock(&fileQueue->lock2);
+      fileName = dequeue2(fileQueue); // needs to be in lock
+    pthread_mutex_unlock(&fileQueue->lock2);
+    if(fileName == NULL){
       return NULL;
     }
 
     int nameLength = strlen(fileName);
-    if ( !((strncmp(".", fileName, 1) == 0) || (strncmp("wrap.", fileName, 5) == 0)) ) {
+    int counter = 0;
+    for(int x = nameLength - 1; x>=0; x--){
+      if(fileName[x] == '/')
+        break;
+      counter++;
+    }
+    char*ptr = &fileName[nameLength-counter];
+    if ( !((strncmp(".", ptr, 1) == 0) || (strncmp("wrap.", ptr, 5) == 0)) ) {
       int fd = open(fileName, O_RDONLY);
       char *wrapped = malloc(sizeof(char) * 6 + nameLength);
-      strcpy(wrapped, "wrap.");
-      strcat(wrapped, fileName); // concatenates "wrap." with given file name
-
+      memcpy(wrapped,fileName,nameLength);
+      wrapped[counter] = 'w';
+      wrapped[counter+1]='r';
+      wrapped[counter+2]='a';
+      wrapped[counter+3]='p';
+      wrapped[counter+4]='.';
+      memcpy(wrapped + counter + 5, ptr, (nameLength-counter) + 1);
       // opens new destination file
       int newfd = open(wrapped, O_WRONLY | O_TRUNC | O_CREAT, 0666);
       wrap(width, fd, newfd);
@@ -458,13 +516,13 @@ void wrap(int width, int fd_input, int fd_output){
   }
 int main(int argc, char*argv[]) {
   struct Queue *dQueue = (struct Queue*) malloc(sizeof(struct Queue));
-  struct Queue *fQueue = (struct Queue*) malloc(sizeof(struct Queue));
+  struct Queue2 *fQueue = (struct Queue2*) malloc(sizeof(struct Queue2));
 
   int numDirThreads;
   int numWrapThreads;
 
   queue_init(dQueue);
-  queue_init(fQueue);
+  queue_init2(fQueue);
 
 //    if (argc == 1 || argc > 3) {
 //         return EXIT_FAILURE;
@@ -488,7 +546,7 @@ int main(int argc, char*argv[]) {
       return EXIT_FAILURE;
     }
     printf("%d%d",numDirThreads,numWrapThreads);
-    //pthread_t wrapThreads[1];
+    pthread_t wrapThreads[1];
     pthread_t dirThreads[30];
     struct Args *args = (struct Args *)malloc(sizeof(struct Args));
     char *dirName = argv[3];
@@ -499,13 +557,13 @@ int main(int argc, char*argv[]) {
     }
     enqueue(dQueue,name);
     //int count = 0;
-    /*for(int x = 0; x < 1; x++){
+    for(int x = 0; x < 1; x++){
       args->dirQ = dQueue;
       args->fileQ = fQueue;
       args->width = width;
       pthread_create(&wrapThreads[x], NULL, wrapFiles,args);
-      count++;
-    }*/
+      //count++;
+    }
     //printf("num of wrap threads are: %d", count);
     while(traversalDone == false || dQueue->start != NULL){
       for(int x = 0; x < 30; x++){
@@ -517,11 +575,11 @@ int main(int argc, char*argv[]) {
           pthread_join(dirThreads[x], NULL);
       }
     }
-  /*  traversalDone = true;
-    pthread_cond_signal(&fQueue->dequeue);
+   traversalDone = true;
+    pthread_cond_broadcast(&fQueue->dequeue2);
     for(int x = 0; x < 1; x++){
       pthread_join(wrapThreads[x], NULL);
-    }*/
+    }
 
 //     free(wrapThreads);
 //     free(dirThreads);
@@ -592,3 +650,4 @@ int main(int argc, char*argv[]) {
    }
     return EXIT_SUCCESS;
   }
+
